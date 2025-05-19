@@ -318,8 +318,8 @@ class JournalQueryHandler(QueryHandler):
 # FullQueryEngine and BasicQueryEngine
 class BasicQueryEngine(object):
     def __init__(self):
-        self.journalQuery = JournalQueryHandler 
-        self.categoryQuery = CategoryQueryHandler 
+        self.journalQuery = []
+        self.categoryQuery = []
 
     def cleanJournalHandlers(self):
         pass
@@ -354,11 +354,22 @@ class BasicQueryEngine(object):
     def JournalsWithDOAJSeal(self):
         pass
 
-    def getAllCategories(self):
-        pass
+    def getAllCategories(self): --> List 
+        result = []
+        for handler in self.categoryQuery:
+            df = handler.getAllCategories()  # returns a DataFrame
+            for _, row in df.iterrows():
+                result.append(Category(ids=row['id'], quartile=row.get('quartile')))
+        return result
+       
 
     def getAllAreas(self):
-        pass
+        result = []
+        for handler in self.categoryQuery:
+            df = handler.getAllAreas()
+            for _, row in df.iterrows():
+                result.append(Area(ids=row['id']))
+        return result
 
     def getCategoriesWithQuartile(self, quartiles=set()):
         pass
