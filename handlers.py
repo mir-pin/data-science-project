@@ -4,6 +4,13 @@ from rdflib.plugins.stores.sparqlstore import SPARQLUpdateStore
 from rdflib.namespace import XSD
 from sparql_dataframe import get
 
+import json
+from json import load
+import pprint
+import pandas as pd
+from pandas import read_sql, Series, DataFrame, merge 
+from sqlite3 import connect 
+
 
 
 class Handler(object):
