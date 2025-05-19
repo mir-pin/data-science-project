@@ -88,17 +88,12 @@ class JournalUploadHandler(UploadHandler):
         store = SPARQLUpdateStore()
         endpoint = "http://127.0.0.1:9999/blazegraph/sparql"
 
-        # store.open((endpoint, endpoint))
+        store.open((endpoint, endpoint))
 
-        # for triple in graph_db.triples((None, None, None)):
-        #     store.add(triple)
+        for triple in graph_db.triples((None, None, None)):
+            store.add(triple)
 
-        # store.close()
+        store.close()
 
-        # return True
+        return True
     
-
-grp_endpoint = "http://127.0.0.1:9999/blazegraph/sparql"
-journals = JournalUploadHandler()
-journals.setDbPathOrUrl(grp_endpoint)
-print(journals.pushDataToDb("/Users/sara/Documents/università/magistrale (DHDK)/I. second semester/Data Science/project/data/doaj.csv"))
