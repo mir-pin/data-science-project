@@ -31,19 +31,21 @@ class QueryHandler(Handler):
                     FILTER(CONTAINS(?identifier, "{id}"))
                     }}
             """
-        df_id = get(endpoint, query, True)
-        return df_id
+        
+        df_journals = get(endpoint, query, True)
+        if df_journals.empty:
+            with connect(self.dbPathOrUrl) as con:
+                queries = [
+                    "SELECT * FROM Categories WHERE category_name = ?",
+                    "SELECT * FROM Areas WHERE area_name = ?"
+                ]
 
-        with connect(self.dbPathOrUrl) as con:
-            queries = [
-                "SELECT * FROM Categories WHERE category_name = ?",
-                "SELECT * FROM Areas WHERE area_name = ?"
-            ]
-
-            for query in queries:
-                df = read_sql(query, con, params=(id,)) # add comma after Id to make it a one-element tuple
-                if not df.empty:
-                    return df
+                for query in queries:
+                    df_rel = read_sql(query, con, params=(id,)) # add comma after Id to make it a one-element tuple
+                    if not df_rel.empty:
+                        return df_rel
+        else:
+            return df_journals
         
 
 class JournalQueryHandler(QueryHandler):
