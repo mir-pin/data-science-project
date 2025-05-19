@@ -369,20 +369,20 @@ class BasicQueryEngine(object):
     def JournalsWithDOAJSeal(self):
         pass
 
-    def getAllCategories(self): --> List 
+    def getAllCategories(self) -> list: 
         result = []
         for handler in self.categoryQuery:
             df = handler.getAllCategories()  # returns a DataFrame
-            for _, row in df.iterrows():
+            for _, row in df.iterrows():        #_ è una convenzione di Python per dire I don't care about this variable, in questo caso _ si riferisce a index
                 result.append(Category(ids=row['id'], quartile=row.get('quartile')))
         return result
        
 
-    def getAllAreas(self):
+    def getAllAreas(self) -> list:
         result = []
         for handler in self.categoryQuery:
             df = handler.getAllAreas()
-            for _, row in df.iterrows():
+            for _, row in df.iterrows():    #_ è una convenzione di Python per dire I don't care about this variable, in questo caso _ si riferisce a index
                 result.append(Area(ids=row['id']))
         return result
 
