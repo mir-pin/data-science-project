@@ -33,6 +33,17 @@ class QueryHandler(Handler):
             """
         df_id = get(endpoint, query, True)
         return df_id
+
+        with connect(self.dbPathOrUrl) as con:
+            queries = [
+                "SELECT * FROM Categories WHERE category_name = ?",
+                "SELECT * FROM Areas WHERE area_name = ?"
+            ]
+
+            for query in queries:
+                df = read_sql(query, con, params=(id,)) # add comma after Id to make it a one-element tuple
+                if not df.empty:
+                    return df
         
 
 class JournalQueryHandler(QueryHandler):
