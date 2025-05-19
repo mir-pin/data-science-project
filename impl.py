@@ -121,7 +121,7 @@ class UploadHandler(Handler):
 class CategoryUploadHandler(UploadHandler):
     def __init__(self):
         super().__init__()  
-
+   
     def pushDataToDb(self, path):
         with open(path, "r", encoding="utf-8") as f:
             json_doc = load(f)
@@ -132,13 +132,32 @@ class CategoryUploadHandler(UploadHandler):
         cat_and_quartile = []
         area_rows = set()
         cat_area_rows = []
+        journal_cat = []
 
+        # Journals dataframe 
+        idx = 0
         for journal in json_doc:
+            journal_id = "journal-" + str(idx)
+            idx += 1
+
+            # Journals  
+            for id_entry in journal.get("identifiers", []):  # For the actual ISSN and EISSN
+                journals.append({
+                "journal_id": journal_id,
+                "identifier": id_entry
+                }) 
 
             for cat in journal.get("categories", []):
                 cat_id = cat.get("id")
                 quartile = cat.get("quartile")
+                # Journal-Category 
+                journal_cat.append({
+                    "journal_id": journal_id,
+                    "category_name": cat_id
+                })
+                # Categories
                 my_categories.add(cat_id)
+                # Categories-Quartile
                 cat_and_quartile.append({
                     "category_name": cat_id,
                     "quartile": quartile
@@ -149,24 +168,13 @@ class CategoryUploadHandler(UploadHandler):
                     cat_area_rows.append({
                         "category_name": cat_id,
                         "area_name": area
-                    })
-
-        # Journals dataframe 
-        idx = 0
-        for journal in json_doc:
-            journal_id = "journal-" + str(idx)
-            idx += 1
-            for id_entry in journal.get("identifiers", []):  # For the actual ISSN and EISSN
-                journals.append({
-                    "journal_id": journal_id,
-                    "identifier": id_entry
-                }) 
-                
-        journals_df = DataFrame(journals)
-        internal_ids = []
-        for idx, row in journals_df.iterrows():
-            internal_ids.append("id-" + str(idx))
-        journals_df.insert(0, "internal_ids", Series(internal_ids, dtype="string"))
+                    }) 
+                        
+                journals_df = DataFrame(journals)
+                internal_ids = []
+                for idx, row in journals_df.iterrows():
+                    internal_ids.append("id-" + str(idx))
+                journals_df.insert(0, "internal_ids", Series(internal_ids, dtype="string"))
 
         # Categories dataframe
         # Generate a list of internal identifiers for categories (don't know if it is needed)
@@ -202,14 +210,19 @@ class CategoryUploadHandler(UploadHandler):
         cat_area_df = cat_area_df.merge(areas_df, on="area_name")
         cat_area_df = cat_area_df[["category_ids", "area_ids"]]
 
+        # Journal-Category dataframe 
+        journal_cat_df = DataFrame(journal_cat)
+        journal_cat_df = journal_cat_df.merge(categories_df, on="category_name")
+        journal_cat_df = journal_cat_df[["journal_id", "category_ids"]]
+
         with connect("rel.db") as con:
             journals_df.to_sql("JournalIds", con, if_exists="replace", index=False)
             categories_df.to_sql("Categories", con, if_exists="replace", index=False)
             areas_df.to_sql("Areas", con, if_exists="replace", index=False)
             cat_quartile_df.to_sql("CategoriesQuartile", con, if_exists="replace", index=False)
             cat_area_df.to_sql("CategoriesAreas", con, if_exists="replace", index=False)
+            journal_cat_df.to_sql("JournalCategories", con, if_exists="replace", index=False)
         con.commit()
-
 
 
 
