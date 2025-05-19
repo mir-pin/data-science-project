@@ -387,13 +387,24 @@ class BasicQueryEngine(object):
         return result
 
     def getCategoriesWithQuartile(self, quartiles=set()):
-        pass
+        result = []
+        for handler in self.categoryQuery:
+            result += handler.getCategoriesWithQuartile(quartiles)
+        return result
+      
 
     def getCategoriesAssignedToAreas(self, area_ids=set()):
-        pass
+        result = []
+        for handler in self.categoryQuery:
+            result += handler.getCategoriesAssignedToAreas(area_ids)
+        return result
+        
 
     def getAreasAssignedToCategories(self, category_ids=set()):
-        pass
+        result = []
+        for handler in self.categoryQuery:
+            result += handler.getAreasAssignedToCategories(category_ids)
+        return result
 
 
 class FullQueryEngine(BasicQueryEngine):
