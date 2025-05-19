@@ -6,8 +6,8 @@ class BasicQueryEngine(object):
 
     def __init__(self, journalQuery):       # categoryQuery
         self.journalQuery = list()
-        for JournalQueryHandler in journalQuery:
-            self.journalQuery.append(JournalQueryHandler)
+        for jqh in journalQuery:
+            self.journalQuery.append(jqh)
 
         # self.categoryQuery = list()
         # for CategoryDataQueryHandler in categoryQuery:
@@ -117,36 +117,3 @@ class BasicQueryEngine(object):
             return result
         
         return None
-
-
-
-
-grp_endpoint = "http://127.0.0.1:9999/blazegraph/sparql"
-# journals = JournalUploadHandler()
-# journals.setDbPathOrUrl(grp_endpoint)
-# journals.pushDataToDb("/Users/sara/Documents/università/magistrale (DHDK)/I. second semester/Data Science/project/data/doaj.csv")
-
-jou_qh = JournalQueryHandler()
-jou_qh.setDbPathOrUrl(grp_endpoint)
-
-engine = BasicQueryEngine([])
-engine.addJournalHandlers(jou_qh)
-
-prova_1 = engine.getEntityById("1676-546X")
-print(prova_1.seal)
-
-# pprint(engine.getJournalsWithTitle("Pro"))
-# print(engine.getJournalsWithLicense("CC BY"))
-# print(engine.getJournalsWithAPC())
-
-
-
-# Journal(title = row["title"],
-#                                   id = row["identifiers"],
-#                                   languages = row["languages"],
-#                                   publisher = row["publisher"],
-#                                   seal = row["seal"],
-#                                   licence = row["licence"],
-#                                   apc = row["apc"],
-#                                   hasCategory = row["hasCategory"],
-#                                   hasArea = row["hasArea"])
