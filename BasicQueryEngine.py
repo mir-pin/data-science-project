@@ -4,22 +4,30 @@ from my_data_model import Journal
 
 class BasicQueryEngine(object):
 
-    def __init__(self, journalQuery):       # categoryQuery
+    def __init__(self, journalQuery, categoryQuery):
         self.journalQuery = list()
         for jqh in journalQuery:
             self.journalQuery.append(jqh)
 
-        # self.categoryQuery = list()
-        # for CategoryDataQueryHandler in categoryQuery:
-        #     self.categoryQuery.append(CategoryDataQueryHandler)
+        self.categoryQuery = list()
+        for cqh in categoryQuery:
+            self.categoryQuery.append(cqh)
 
     def cleanJournalHandlers(self):
-        self.journalQuery.clear()
-        return True
+        result = True
+        if not self.journalQuery:
+            result = False
+        else:
+            self.journalQuery.clear()
+        return result
     
     def addJournalHandlers(self, handler):
-        self.journalQuery.append(handler)
-        return True
+        result = True
+        if handler not in self.journalQuery:
+            self.journalQuery.append(handler)
+        else:
+            result = False
+        return result
     
     def getEntityById(self, id):
         self.id = id
