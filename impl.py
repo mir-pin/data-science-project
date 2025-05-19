@@ -6,16 +6,20 @@ from pandas import read_sql, Series, DataFrame, merge
 from sqlite3 import connect 
 
 class IdentifiableEntity(object):
-    def __init__(self, ids):
-        if isinstance(ids, str): # isinstance checks wheter a value is of a specific type
-            self.ids = [ids]     # it guarantees that self.ids is always a list 
-        elif isinstance(ids, list):
-            self.ids = ids
-        else:
-            raise ValueError("it must be a string or list of strings")
+    def __init__(self, ids: list[str]):
+        if not ids:
+            raise ValueError("At least one id is required")
         
+        self.id = list()
+        for identifier in ids:
+            self.id.append(identifier)
+
     def getIds(self):
-        return self.ids 
+        result = []
+        for identifier in self.id:
+            result.append(identifier)
+        result.sort()
+        return result
 
 class Category(IdentifiableEntity):
     def __init__(self, ids, quartile=None):
@@ -29,7 +33,68 @@ class Area(IdentifiableEntity):
     pass # Inherits everything from IdentifiableEntity, no additional
     
 class Journal(IdentifiableEntity):
-    pass
+    def __init__(self, title: str, ids: list[str], languages: list[str], publisher: str, seal: bool, licence: str, apc: bool, hasCategory, hasArea):
+
+        # verify that some attributes have at least one item
+        if not title:
+            raise ValueError("Title is required")
+        if not languages:
+            raise ValueError("At least one language is required")
+        if not licence:
+            raise ValueError("Licence is required")
+        
+        # defining the attributes
+        self.title = title
+
+        self.languages = list()
+        for language in languages:
+            self.languages.append(language)
+        
+        self.publisher = publisher
+
+        if seal == "Yes":
+            self.seal = True
+        else:
+            self.seal = False
+
+        self.licence = licence
+
+        if apc == "Yes":
+            self.apc = True
+        else:
+            self.apc = False
+
+        # defining the relations
+        self.hasCategory = hasCategory
+        self.hasArea = hasArea
+
+        # the constructor of the superclass is explicitly recalled, so as
+        # to handle the input parameters as done in the superclass
+        super().__init__(ids)
+
+
+    # defining the methods of the class Journal
+    def getTitle(self):
+        return self.title
+    
+    def getLanguages(self):
+        result = []
+        for language in self.languages:
+            result.append(language)
+        result.sort()
+        return result
+    
+    def getPublisher(self):
+        return self.publisher
+    
+    def hasDOAJSeal(self):
+        return self.seal
+    
+    def getLicence(self):
+        return self.licence
+    
+    def hasAPC(self):
+        return self.apc
 
 
 
@@ -144,6 +209,9 @@ class CategoryUploadHandler(UploadHandler):
             cat_quartile_df.to_sql("CategoriesQuartile", con, if_exists="replace", index=False)
             cat_area_df.to_sql("CategoriesAreas", con, if_exists="replace", index=False)
         con.commit()
+
+
+
 
 class QueryHandler(Handler):
     def __init__(self):
