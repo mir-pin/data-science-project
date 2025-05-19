@@ -317,21 +317,36 @@ class JournalQueryHandler(QueryHandler):
 
 # FullQueryEngine and BasicQueryEngine
 class BasicQueryEngine(object):
-    def __init__(self):
+    def __init__(self, journalQuery, categoryQuery):
         self.journalQuery = []
-        self.categoryQuery = []
+        self.categoryQuery = [] 
+
+        for cqh in categoryQuery:
+            self.categoryQuery.append(cqh)
 
     def cleanJournalHandlers(self):
         pass
 
     def cleanCategoryHandlers(self):
-        pass
+        result = True
+        if not self.categoryQuery:
+            result = False 
+        else:
+            self.categoryQuery.clear() 
 
-    def addJournalHandler(self, handler=JournalQueryHandler):
+        return result
+
+    def addJournalHandler(self, handler):
         pass
     
-    def addCategoryHandler(self, handler=CategoryQueryHandler):
-        pass
+    def addCategoryHandler(self, handler):
+        result = True
+        if handler not in self.categoryQuery:
+            self.categoryQuery.append(handler)
+        else: 
+            result = False 
+        
+        return result
 
     def getEntityById(self, id):
         pass
