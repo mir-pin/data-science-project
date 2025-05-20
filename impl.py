@@ -130,7 +130,7 @@ class CategoryUploadHandler(UploadHandler):
         journals = []
         my_categories = set()
         cat_and_quartile = []
-        area_rows = set()
+        areas = set()
         cat_area_rows = []
         journal_cat = []
 
@@ -173,7 +173,7 @@ class CategoryUploadHandler(UploadHandler):
 
                 # Areas and Categories
                 for area in journal.get("areas"):
-                    area_rows.add(area)
+                    areas.add(area)
                     cat_area_rows.append({
                         "category_name": cat_id,
                         "area_name": area
