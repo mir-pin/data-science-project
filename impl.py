@@ -370,7 +370,10 @@ class BasicQueryEngine(object):
             df = handler.getAllCategories()  # returns a DataFrame
             for _, row in df.iterrows():        #_ è una convenzione di Python per dire I don't care about this variable, in questo caso _ si riferisce a index
                 result.append(Category(ids=row['id'], quartile=row.get('quartile')))
-        return result
+        second_result = []
+        for item in result:
+            second_result.append(item.id)
+        return second_result
        
 
     def getAllAreas(self) -> list:
@@ -379,27 +382,46 @@ class BasicQueryEngine(object):
             df = handler.getAllAreas()
             for _, row in df.iterrows():    #_ è una convenzione di Python per dire I don't care about this variable, in questo caso _ si riferisce a index
                 result.append(Area(ids=row['id']))
-        return result
+        second_result = []
+        for item in result:
+            second_result.append(item.id)
+        return second_result
 
     def getCategoriesWithQuartile(self, quartiles=set()):
         result = []
         for handler in self.categoryQuery:
-            result += handler.getCategoriesWithQuartile(quartiles)
-        return result
+            df = handler.getCategoryWithQuartile(quartiles)
+            for _, row in df.iterrows():
+                if pd.notna(row["quartile"]):
+                    result.append(Category(ids=row['category_name'], quartile=row.get('quartile')))
+        second_result = []
+        for item in result:
+            second_result.append(item.id)
+        return second_result
       
 
     def getCategoriesAssignedToAreas(self, area_ids=set()):
         result = []
         for handler in self.categoryQuery:
-            result += handler.getCategoriesAssignedToAreas(area_ids)
-        return result
+            df = handler.getCategoriesAssignedTAreas(area_ids)
+            for _, row in df.iterrows():
+                result.append(Category(ids=row['category_name'])
+        second_result = []
+        for item in result:
+            second_result.append(item.id)
+        return second_result
         
 
     def getAreasAssignedToCategories(self, category_ids=set()):
         result = []
         for handler in self.categoryQuery:
-            result += handler.getAreasAssignedToCategories(category_ids)
-        return result
+            df = handler.getAreasAssignedToCategories(category_ids):
+            for _, row in df.iterrows():
+                result.append(Area(area=row['area_id'])
+        second_result = []
+        for item in result:
+            second_result.append(item.id)
+        return second_result
 
 
 class FullQueryEngine(BasicQueryEngine):
