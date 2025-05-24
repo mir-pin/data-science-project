@@ -6,20 +6,18 @@ from pandas import read_sql, Series, DataFrame, merge
 from sqlite3 import connect 
 
 class IdentifiableEntity(object):
-    def __init__(self, ids: list[str]):
-        if not ids:
-            raise ValueError("At least one id is required")
-        
-        self.id = list()
-        for identifier in ids:
-            self.id.append(identifier)
+    def __init__(self, id):
+        if isinstance(id, str):
+            self.id = id
+        elif isinstance(id, list):
+            self.id = ",".join(id)
 
     def getIds(self):
         result = []
         for identifier in self.id:
             result.append(identifier)
         result.sort()
-        return result
+        return result 
 
 class Category(IdentifiableEntity):
     def __init__(self, ids, quartile=None):
@@ -30,7 +28,9 @@ class Category(IdentifiableEntity):
         return self.quartile 
 
 class Area(IdentifiableEntity):
-    pass # Inherits everything from IdentifiableEntity, no additional
+    def __init__(self, ids):
+        super().__init__(ids)
+    # Inherits everything from IdentifiableEntity, no additional
     
 class Journal(IdentifiableEntity):
     def __init__(self, title: str, ids: list[str], languages: list[str], publisher: str, seal: bool, licence: str, apc: bool, hasCategory, hasArea):
@@ -96,6 +96,25 @@ class Journal(IdentifiableEntity):
     def hasAPC(self):
         return self.apc
 
+    def getCategories(self):
+        result = []
+        if not self.hasCategory:
+            with connect("rel.db") as con:
+                query = """
+                SELECT DISTINCT category_name
+                FROM JournalCategories
+                LEFT JOIN Categories ON JournalCategories.category_id = Categories.category_id
+                LEFT JOIN JournalIds ON JournalIds.journal_id = JournalCategories.journal_id
+                WHERE identifier = ?
+                """
+                df = read_sql(query, con, params=(self.id,))
+            for _, row in df.iterrows():
+                item = (Category(row["category_name"]))
+                result.append(item.id)
+            return result
+        else:
+            return self.hasCategory
+
 
 
 class Handler(object):
@@ -110,13 +129,17 @@ class Handler(object):
             self.dbPathOrUrl = pathOrUrl
             return True
         return False 
-    
+
+
+
 class UploadHandler(Handler):
     def __init__(self):
         super().__init__()
 
     def pushDataToDb(self, path): 
         pass 
+
+
 
 class CategoryUploadHandler(UploadHandler):
     def __init__(self):
@@ -129,9 +152,9 @@ class CategoryUploadHandler(UploadHandler):
         # 2. Lists for my DataFrames 
         journals = []
         my_categories = set()
-        cat_and_quartile = []
         areas = set()
-        cat_area_rows = []
+        cat_area = []
+        journal_area = []
         journal_cat = []
 
         # Journals dataframe 
@@ -140,81 +163,77 @@ class CategoryUploadHandler(UploadHandler):
             journal_id = "journal-" + str(idx)
             idx += 1
 
-            # # Journals: option 1 
-            # for id_entry in journal.get("identifiers", []):  # For the actual ISSN and EISSN
-            #     journals.append({
-            #     "journal_id": journal_id,
-            #     "identifier": id_entry
-            #     }) 
-            # Journals: option 2 x avere identifiers divisi dalla virgola come nel csv
-            id_entries = journal.get("identifiers")
-            id1 = id_entries[0]
-            if len(id_entries) > 1:
-                id2 = id_entries[1]
-                my_entries = id1 + ", " + id2
-            else:
-                my_entries = id1 
-
+            # Create lists for the DataFrames
+        idx = 0
+        for journal in json_doc:
+            journal_id = "journal-" + str(idx)
+            idx += 1
+ 
+            for id_entry in journal.get("identifiers", []):  # For the actual ISSN and EISSN
+                journals.append({
+                "journal_id": journal_id,
+                "identifier": id_entry
+                }) 
+            
             for cat in journal.get("categories", []):
                 cat_id = cat.get("id")
                 quartile = cat.get("quartile")
                 # Journal-Category 
                 journal_cat.append({
                     "journal_id": journal_id,
-                    "category_name": cat_id
+                    "category_name": cat_id, 
+                    "quartile": quartile
                 })
                 # Categories
                 my_categories.add(cat_id)
-                # Categories-Quartile
-                cat_and_quartile.append({
-                    "category_name": cat_id,
-                    "quartile": quartile
-                })
 
-                # Areas and Categories
                 for area in journal.get("areas"):
                     areas.add(area)
-                    cat_area_rows.append({
-                        "category_name": cat_id,
+                    journal_area.append({
+                        "journal_id": journal_id,
                         "area_name": area
                     }) 
+                    cat_area.append({
+                    "category_name": cat_id,
+                    "area_name": area
+                    })
 
-        # Journals dataframe 
+        # Journals dataframe         
         journals_df = DataFrame(journals)
-        journals_df.insert(0, "internal_ids", ["id-" + str(i) for i in range(len(journals_df))])
-        
+        journals_df.insert(0, "internal_id", ["id-" + str(i) for i in range(len(journals_df))])
+
         # Categories dataframe
         categories_df = DataFrame(list(my_categories), columns=["category_name"])
-        # Generate a list of internal identifiers for categories 
-        categories_df.insert(0, "category_ids", ["category-" + str(i) for i in range(len(categories_df))])
-
+         # Generate a list of internal identifiers for categories 
+        categories_df.insert(0, "category_id", ["category-" + str(i) for i in range(len(categories_df))])
+        
         # Areas dataframe 
         areas_df = DataFrame(list(areas), columns=["area_name"])
-        areas_df.insert(0, "area_ids", ["area-" + str(i) for i in range(len(areas_df))])
+        areas_df.insert(0, "area_id", ["area-" + str(i) for i in range(len(areas_df))])
 
-        # PROBLEM !!! Handle the case in which the quartile is empty !!!
-        # Category-quartile dataframe: dont' know if this is gonna work, maybe it's better just a quartile dataframe 
-        cat_quartile_df= DataFrame(cat_and_quartile, columns=["category_name", "quartile"])
-        cat_quartile_df.drop_duplicates(inplace=True) # inplace=True to modify the original dataframe and avoid duplicates
-        cat_quartile_df.insert(0, "internal_ids", ["cat-quartile-" + str(i) for i in range(len(cat_quartile_df))])
+        # # Journal-Area dataframe
+        journal_area_df = DataFrame(journal_area, columns=["journal_id", "area_name"])
+        journal_area_df = journal_area_df.merge(areas_df, on="area_name")
+        journal_area_df = journal_area_df[["journal_id", "area_id"]]
+        journal_area_df.drop_duplicates(inplace=True)
 
-        # Category-Area dataframe QUI qualcosa non va non so cosa!!
-        cat_area_df = DataFrame(cat_area_rows, columns=["category_name", "area_name"])
+        # Category-Area dataframe 
+        cat_area_df = DataFrame(cat_area, columns=["category_name", "area_name"])
         cat_area_df.drop_duplicates(inplace=True)
         cat_area_df = cat_area_df.merge(categories_df, on="category_name")
         cat_area_df = cat_area_df.merge(areas_df, on="area_name")
-        cat_area_df = cat_area_df[["category_ids", "area_ids"]]
+        cat_area_df = cat_area_df[["category_id", "area_id"]]
 
         # Journal-Category dataframe 
         journal_cat_df = DataFrame(journal_cat)
         journal_cat_df = journal_cat_df.merge(categories_df, on="category_name")
-        journal_cat_df = journal_cat_df[["journal_id", "category_ids"]]
+        journal_cat_df = journal_cat_df[["journal_id", "category_id", "quartile"]]
 
-        with connect("rel.db") as con:
+        with connect(self.dbPathOrUrl) as con:
             journals_df.to_sql("JournalIds", con, if_exists="replace", index=False)
             categories_df.to_sql("Categories", con, if_exists="replace", index=False)
             areas_df.to_sql("Areas", con, if_exists="replace", index=False)
-            cat_quartile_df.to_sql("CategoriesQuartile", con, if_exists="replace", index=False)
+            journal_area_df.to_sql("JournalAreas", con, if_exists="replace", index=False)
             cat_area_df.to_sql("CategoriesAreas", con, if_exists="replace", index=False)
             journal_cat_df.to_sql("JournalCategories", con, if_exists="replace", index=False)
         con.commit()
@@ -243,26 +262,27 @@ class CategoryQueryHandler(QueryHandler):
     
     def getAllCategories(self):
         with connect(self.dbPathOrUrl) as con:
-            query = "SELECT * FROM Categories"
+            query = "SELECT category_name FROM Categories"
             df = read_sql(query, con)
         return df 
     
     def getAllAreas(self):
         with connect(self.dbPathOrUrl) as con:
-            query = "SELECT * FROM Areas"
+            query = "SELECT area_name FROM Areas"
             df = read_sql(query, con)
         return df
     
     def getCategoriesWithQuartile(self, quartiles=set()):
         with connect(self.dbPathOrUrl) as con:
             if not quartiles: # input collection empty, it's like all quartiles are specified
-                query = "SELECT * FROM CategoriesQuartile"
+                query = "SELECT category_name FROM CategoriesQuartile"
                 df = read_sql(query, con)
             else:
                 q = ', '.join(['?'] * len(quartiles)) # placeholders
                 query = f""" 
-                    SELECT * 
-                    FROM CategoriesQuartile
+                    SELECT DISTINCT category_name, quartile 
+                    FROM JournalCategories
+                    LEFT JOIN Categories ON Categories.category_id = JournalCategories.category_id
                     WHERE quartile IN ({q}) 
                     """   
                 df = read_sql(query, con, params=tuple(quartiles))
@@ -271,19 +291,14 @@ class CategoryQueryHandler(QueryHandler):
     def getCategoriesAssignedToAreas(self, area_ids=set()):
         with connect(self.dbPathOrUrl) as con:
             if not area_ids: # input collection empty, it's like all areas are specified
-                query = """
-                SELECT category_name, area_name 
-                FROM Categories
-                LEFT JOIN CategoriesAreas ON Categories.category_ids = CategoriesAreas.category_ids
-                LEFT JOIN Areas ON CategoriesAreas.area_ids = Areas.area_ids
-                """
+                query = "SELECT DISTINCT category_name FROM Categories"
             else:
                 q = ', '.join(['?'] * len(area_ids))
                 query = f"""
-                SELECT category_name, area_name 
+                SELECT DISTINCT category_name 
                 FROM Categories 
-                LEFT JOIN CategoriesAreas ON Categories.category_ids = CategoriesAreas.category_ids
-                LEFT JOIN Areas ON CategoriesAreas.area_ids = Areas.area_ids
+                LEFT JOIN CategoriesAreas ON Categories.category_id = CategoriesAreas.category_id
+                LEFT JOIN Areas ON CategoriesAreas.area_id = Areas.area_id
                 WHERE area_name in ({q})
                 """
             df = read_sql(query, con, params=tuple(area_ids))
@@ -292,14 +307,14 @@ class CategoryQueryHandler(QueryHandler):
     def getAreasAssignedToCategories(self, category_ids=set()):
         with connect(self.dbPathOrUrl) as con:
             if not category_ids:
-                query = "SELECT area_name FROM Areas"
+                query = "SELECT DISTINCT area_name FROM Areas"
             else:
                 q = ', '.join(['?'] * len(category_ids))
                 query = f"""
-                SELECT area_name, category_name
+                SELECT DISTINCT area_name
                 FROM Areas
-                LEFT JOIN CategoriesAreas ON Areas.area_ids = CategoriesAreas.area_ids
-                LEFT JOIN Categories ON CategoriesAreas.category_ids = Categories.category_ids
+                LEFT JOIN CategoriesAreas ON Areas.area_id = CategoriesAreas.area_id
+                LEFT JOIN Categories ON CategoriesAreas.category_id = Categories.category_id
                 WHERE category_name in ({q})
                 """
             df = read_sql(query, con, params=tuple(category_ids))
@@ -312,15 +327,17 @@ class JournalQueryHandler(QueryHandler):
 
 # FullQueryEngine and BasicQueryEngine
 class BasicQueryEngine(object):
-    def __init__(self, journalQuery, categoryQuery):
-        self.journalQuery = []
-        self.categoryQuery = [] 
-
-        for cqh in categoryQuery:
-            self.categoryQuery.append(cqh)
+    def __init__(self, journalQuery=None, categoryQuery=None): # default values
+        self.journalQuery = list()
+        self.categoryQuery = list() 
 
     def cleanJournalHandlers(self):
-        pass
+        result = True
+        if not self.journalQuery:
+            result = False
+        else:
+            self.journalQuery.clear()
+        return result
 
     def cleanCategoryHandlers(self):
         result = True
@@ -328,11 +345,15 @@ class BasicQueryEngine(object):
             result = False 
         else:
             self.categoryQuery.clear() 
-
         return result
 
     def addJournalHandler(self, handler):
-        pass
+        result = True
+        if handler not in self.journalQuery:
+            self.journalQuery.append(handler)
+        else:
+            result = False
+        return result
     
     def addCategoryHandler(self, handler):
         result = True
@@ -340,7 +361,6 @@ class BasicQueryEngine(object):
             self.categoryQuery.append(handler)
         else: 
             result = False 
-        
         return result
 
     def getEntityById(self, id):
@@ -369,7 +389,7 @@ class BasicQueryEngine(object):
         for handler in self.categoryQuery:
             df = handler.getAllCategories()  # returns a DataFrame
             for _, row in df.iterrows():        #_ è una convenzione di Python per dire I don't care about this variable, in questo caso _ si riferisce a index
-                result.append(Category(ids=row['id'], quartile=row.get('quartile')))
+                result.append(Category(ids=row['category_name'], quartile=row.get('quartile')))
         second_result = []
         for item in result:
             second_result.append(item.id)
@@ -381,7 +401,7 @@ class BasicQueryEngine(object):
         for handler in self.categoryQuery:
             df = handler.getAllAreas()
             for _, row in df.iterrows():    #_ è una convenzione di Python per dire I don't care about this variable, in questo caso _ si riferisce a index
-                result.append(Area(ids=row['id']))
+                result.append(Area(ids=row['area_name']))
         second_result = []
         for item in result:
             second_result.append(item.id)
@@ -393,7 +413,7 @@ class BasicQueryEngine(object):
             df = handler.getCategoryWithQuartile(quartiles)
             for _, row in df.iterrows():
                 if pd.notna(row["quartile"]):
-                    result.append(Category(ids=row['category_name'], quartile=row.get('quartile')))
+                    result.append(Category(ids=row['category_name'], quartile=row['quartile']))
         second_result = []
         for item in result:
             second_result.append(item.id)
@@ -417,7 +437,7 @@ class BasicQueryEngine(object):
         for handler in self.categoryQuery:
             df = handler.getAreasAssignedToCategories(category_ids):
             for _, row in df.iterrows():
-                result.append(Area(area=row['area_id'])
+                result.append(Area(area=row['area_name'])
         second_result = []
         for item in result:
             second_result.append(item.id)
