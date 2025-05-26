@@ -20,20 +20,20 @@ class IdentifiableEntity(object):
         return result 
 
 class Category(IdentifiableEntity):
-    def __init__(self, ids, quartile=None):
-        super().__init__(ids) # Inherits id(s) from IdentifiableEntity
+    def __init__(self, id, quartile=None):
+        super().__init__(id) # Inherits id(s) from IdentifiableEntity
         self.quartile = quartile # Optional string
 
     def getQuartile(self):
         return self.quartile 
 
 class Area(IdentifiableEntity):
-    def __init__(self, ids):
-        super().__init__(ids)
+    def __init__(self, id):
+        super().__init__(id)
     # Inherits everything from IdentifiableEntity, no additional
     
 class Journal(IdentifiableEntity):
-    def __init__(self, title: str, ids: list[str], languages: list[str], publisher: str, seal: bool, licence: str, apc: bool, hasCategory, hasArea):
+    def __init__(self, title: str, id: list[str], languages: list[str], publisher: str, seal: bool, licence: str, apc: bool, hasCategory, hasArea):
 
         # verify that some attributes have at least one item
         if not title:
@@ -70,7 +70,7 @@ class Journal(IdentifiableEntity):
 
         # the constructor of the superclass is explicitly recalled, so as
         # to handle the input parameters as done in the superclass
-        super().__init__(ids)
+        super().__init__(id)
 
 
     # defining the methods of the class Journal
@@ -389,7 +389,7 @@ class BasicQueryEngine(object):
         for handler in self.categoryQuery:
             df = handler.getAllCategories()  # returns a DataFrame
             for _, row in df.iterrows():        #_ è una convenzione di Python per dire I don't care about this variable, in questo caso _ si riferisce a index
-                result.append(Category(ids=row['category_name'], quartile=row.get('quartile')))
+                result.append(Category(id=row['category_name'], quartile=row.get('quartile')))
         second_result = []
         for item in result:
             second_result.append(item.id)
@@ -401,7 +401,7 @@ class BasicQueryEngine(object):
         for handler in self.categoryQuery:
             df = handler.getAllAreas()
             for _, row in df.iterrows():    #_ è una convenzione di Python per dire I don't care about this variable, in questo caso _ si riferisce a index
-                result.append(Area(ids=row['area_name']))
+                result.append(Area(id=row['area_name']))
         second_result = []
         for item in result:
             second_result.append(item.id)
@@ -413,7 +413,7 @@ class BasicQueryEngine(object):
             df = handler.getCategoryWithQuartile(quartiles)
             for _, row in df.iterrows():
                 if pd.notna(row["quartile"]):
-                    result.append(Category(ids=row['category_name'], quartile=row['quartile']))
+                    result.append(Category(id=row['category_name'], quartile=row['quartile']))
         second_result = []
         for item in result:
             second_result.append(item.id)
@@ -425,7 +425,7 @@ class BasicQueryEngine(object):
         for handler in self.categoryQuery:
             df = handler.getCategoriesAssignedTAreas(area_ids)
             for _, row in df.iterrows():
-                result.append(Category(ids=row['category_name'])
+                result.append(Category(id=row['category_name'])
         second_result = []
         for item in result:
             second_result.append(item.id)
@@ -437,7 +437,7 @@ class BasicQueryEngine(object):
         for handler in self.categoryQuery:
             df = handler.getAreasAssignedToCategories(category_ids):
             for _, row in df.iterrows():
-                result.append(Area(area=row['area_name'])
+                result.append(Area(id=row['area_name'])
         second_result = []
         for item in result:
             second_result.append(item.id)
