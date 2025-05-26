@@ -122,13 +122,14 @@ class Journal(IdentifiableEntity):
             query = """
             SELECT DISTINCT area_name
             FROM JournalAreas 
-            LEFT JOIN Areas ON JournalAreas.journal_id = Area.area_name
+            LEFT JOIN Areas ON JournalAreas.area_id = Area.area_id
+            LEFT JOIN JournalIds ON JournalIds.journal_id = JournalCategories.journal_id
             WHERE j.identifier = ?
             """
             df = read_sql(query, con, params=(self.id,))
         for _, row in df.iterrows():
             area = Area(ids=row["area_name"])
-            result.append(area)
+            result.append(item.id)
         return result
     else:
         return self.hasArea
