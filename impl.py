@@ -115,6 +115,24 @@ class Journal(IdentifiableEntity):
         else:
             return self.hasCategory
 
+    def getAreas(self):
+    result = []
+    if not self.hasArea:
+        with connect("rel.db") as con:
+            query = """
+            SELECT DISTINCT area_name
+            FROM JournalAreas 
+            LEFT JOIN Areas ON JournalAreas.journal_id = Area.area_name
+            WHERE j.identifier = ?
+            """
+            df = read_sql(query, con, params=(self.id,))
+        for _, row in df.iterrows():
+            area = Area(ids=row["area_name"])
+            result.append(area)
+        return result
+    else:
+        return self.hasArea
+
 
 
 class Handler(object):
