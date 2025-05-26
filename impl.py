@@ -444,7 +444,7 @@ class BasicQueryEngine(object):
         for handler in self.categoryQuery:
             df = handler.getCategoriesAssignedTAreas(area_ids)
             for _, row in df.iterrows():
-                result.append(Category(id=row['category_name'])
+                result.append(Category(id=row['category_name']))
         second_result = []
         for item in result:
             second_result.append(item.id)
@@ -454,24 +454,39 @@ class BasicQueryEngine(object):
     def getAreasAssignedToCategories(self, category_ids=set()):
         result = []
         for handler in self.categoryQuery:
-            df = handler.getAreasAssignedToCategories(category_ids):
+            df = handler.getAreasAssignedToCategories(category_ids)
             for _, row in df.iterrows():
-                result.append(Area(id=row['area_name'])
+                result.append(Area(id=row['area_name']))
         second_result = []
         for item in result:
             second_result.append(item.id)
         return second_result
 
-
-class FullQueryEngine(BasicQueryEngine):
+#avevo iniziato a provare a fare il full, maaa.... è dura, soltanto ua bozza di qualcosina, Mary
+class FullQueryEngine(BasicQueryEngine): 
     def __init__(self):
         super().__init__()
 
-    def getJournalsInCategoriesWithQuartile():
-        pass
+    def getJournalsInCategoriesWithQuartile(self, categories: set[str], quartiles: set[str]):
+        result =[]
+        for handler in self.journalQuery:
+            df_J = handler.getAllJournals()
+            df_C = handle.getAllCategories()
+        
+            for _, row in df_J.iterrows():
+                result.append()
+        return result
+      
 
-    def getJournalsInAreasWithLicense():
-        pass
+    def getJournalsInAreasWithLicense(self, areas: set[str], licenses: set[str]):
+        result =[]
+        for handler in self.journalQuery:
+            df_J = handler.getAllJournals()
+            df_A = handle.getAllAreas()
+        
+            for _, row in df_J.iterrows():
+                result.append()
+        return result
 
     def getDiamondJournalsInAreasAndCategoriesWithQuartile():
         pass 
