@@ -1,16 +1,16 @@
-from handlers import Handler, JournalUploadHandler
+from handlers import Handler, CategoryUploadHandler
 from sparql_dataframe import get
-
-import json
-from json import load
-import pprint
+from sqlite3 import connect
+from pandas import read_sql, Series, DataFrame, merge
 import pandas as pd
-from pandas import read_sql, Series, DataFrame, merge 
-from sqlite3 import connect 
+from pprint import pprint
+from handlers import UploadHandler, JournalUploadHandler, CategoryUploadHandler
+
 
 class QueryHandler(Handler):
     def __init__(self):
         super().__init__()
+
 
     def getById(self, id):
         endpoint = "http://127.0.0.1:9999/blazegraph/sparql"
@@ -19,7 +19,7 @@ class QueryHandler(Handler):
             PREFIX schema: <https://schema.org/>
             PREFIX wiki: <https://www.wikidata.org/wiki/>
 
-            SELECT ?journal ?title ?languages ?publisher ?seal ?licence ?apc
+            SELECT ?journal ?identifier ?title ?languages ?publisher ?seal ?licence ?apc
             WHERE {{ ?journal schema:identifier ?identifier ;
                     rdf:type schema:Periodical ;
                     schema:name ?title ;
@@ -33,7 +33,52 @@ class QueryHandler(Handler):
             """
         
         df_journals = get(endpoint, query, True)
-        if df_journals.empty:
+        
+        if not df_journals.empty:
+
+            with connect(self.dbPathOrUrl) as con:
+                query_cat = """
+                SELECT DISTINCT category_name
+                FROM Categories
+                LEFT JOIN JournalCategories ON JournalCategories.category_id = Categories.category_id
+                LEFT JOIN JournalIds ON JournalCategories.journal_id = JournalIds. journal_id
+                WHERE identifier = ?
+                """
+
+                query_area = """
+                SELECT DISTINCT area_name
+                FROM Areas 
+                LEFT JOIN JournalAreas ON JournalAreas.area_id = Areas.area_id 
+                LEFT JOIN JournalIds ON JournalAreas.journal_id = JournalIds.journal_id
+                WHERE identifier = ?
+                """
+                
+            cat_df = read_sql(query_cat, con, params=(id,))
+            area_df = read_sql(query_area, con, params=(id,))
+            
+            # if the journal exists in both files
+            # connect all the dataframes
+            if not cat_df.empty and not area_df.empty:
+                categories = []
+                for idx, row in cat_df.iterrows():
+                    
+                    categories.append(cat_df.at[idx, "category_name"])
+                
+                areas = []
+                for idx, row in area_df.iterrows():
+                    
+                    areas.append(area_df.at[idx, "area_name"])
+                
+                df_journals["Category"] = str(categories)
+                df_journals["Area"] = str(areas)
+
+                
+                return df_journals
+            else:
+                return df_journals
+        
+        
+        else:
             with connect(self.dbPathOrUrl) as con:
                 queries = [
                     "SELECT * FROM Categories WHERE category_name = ?",
@@ -44,8 +89,8 @@ class QueryHandler(Handler):
                     df_rel = read_sql(query, con, params=(id,)) # add comma after Id to make it a one-element tuple
                     if not df_rel.empty:
                         return df_rel
-        else:
-            return df_journals
+
+
         
 
 class JournalQueryHandler(QueryHandler):
@@ -119,7 +164,16 @@ class JournalQueryHandler(QueryHandler):
         return df_publisher
     
     def getJournalsWithLicense(self, licenses):
-        endpoint = "http://127.0.0.1:9999/blazegraph/sparql"    
+        endpoint = "http://127.0.0.1:9999/blazegraph/sparql"
+
+        # converting the set in a list, the list in a string
+        list_licenses = []
+        for licence in licenses:
+            list_licenses.append(licence)
+        
+        filter_str = ", ".join(list_licenses)
+
+
         query = f"""
             PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             PREFIX schema: <https://schema.org/>
@@ -134,21 +188,23 @@ class JournalQueryHandler(QueryHandler):
                     wiki:Q162919 ?seal ;
                     schema:license ?licence ;
                     wiki:Q15291071 ?apc .
-                    FILTER(CONTAINS(?licence, "{licenses}"))
+                    FILTER(STR(?licence) IN ("{filter_str}"))
                     }}
             """
         df_licence = get(endpoint, query, True)
         return df_licence
     
+
+    
     def getJournalsWithAPC(self):
         endpoint = "http://127.0.0.1:9999/blazegraph/sparql"    
-        query = f"""
+        query = """
             PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             PREFIX schema: <https://schema.org/>
             PREFIX wiki: <https://www.wikidata.org/wiki/>
 
             SELECT ?journal ?title ?identifier ?languages ?publisher ?seal ?licence ?apc
-            WHERE {{ ?journal rdf:type schema:Periodical ;
+            WHERE { ?journal rdf:type schema:Periodical ;
                     schema:name ?title ;
                     schema:identifier ?identifier ;
                     schema:Language ?languages ;
@@ -157,20 +213,20 @@ class JournalQueryHandler(QueryHandler):
                     schema:license ?licence ;
                     wiki:Q15291071 ?apc .
                     FILTER(?apc = True)
-                    }}
+                    }
             """
         df_apc = get(endpoint, query, True)
         return df_apc
 
     def getJournalsWithDOAJSeal(self):
         endpoint = "http://127.0.0.1:9999/blazegraph/sparql"    
-        query = f"""
+        query = """
             PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             PREFIX schema: <https://schema.org/>
             PREFIX wiki: <https://www.wikidata.org/wiki/>
 
             SELECT ?journal ?title ?identifier ?languages ?publisher ?seal ?licence ?apc
-            WHERE {{ ?journal rdf:type schema:Periodical ;
+            WHERE { ?journal rdf:type schema:Periodical ;
                     schema:name ?title ;
                     schema:identifier ?identifier ;
                     schema:Language ?languages ;
@@ -179,39 +235,11 @@ class JournalQueryHandler(QueryHandler):
                     schema:license ?licence ;
                     wiki:Q15291071 ?apc .
                     FILTER(?seal = True)
-                    }}
+                    }
             """
         df_seal = get(endpoint, query, True)
         return df_seal
-
-
-grp_endpoint = "http://127.0.0.1:9999/blazegraph/sparql"
-# journals = JournalUploadHandler()
-# journals.setDbPathOrUrl(grp_endpoint)
-# journals.pushDataToDb("/Users/sara/Documents/università/magistrale (DHDK)/I. second semester/Data Science/project/data/doaj.csv")
-
-jou_qh = JournalQueryHandler()
-jou_qh.setDbPathOrUrl(grp_endpoint)
-
-# problema encoding !!!!
-
-
-
-class QueryHandler(Handler):
-    def __init__(self):
-        super().__init__()
-
-    def getById(self, id):
-        with connect(self.dbPathOrUrl) as con:
-            queries = [
-                "SELECT * FROM Categories WHERE category_name = ?",
-                "SELECT * FROM Areas WHERE area_name = ?"
-            ]
-
-            for query in queries:
-                df = read_sql(query, con, params=(id,)) # add comma after Id to make it a one-element tuple
-                if not df.empty:
-                    return df
+    
 
 class CategoryQueryHandler(QueryHandler):
     def __init__(self):
@@ -219,26 +247,27 @@ class CategoryQueryHandler(QueryHandler):
     
     def getAllCategories(self):
         with connect(self.dbPathOrUrl) as con:
-            query = "SELECT * FROM Categories"
+            query = "SELECT category_name FROM Categories"
             df = read_sql(query, con)
         return df 
     
     def getAllAreas(self):
         with connect(self.dbPathOrUrl) as con:
-            query = "SELECT * FROM Areas"
+            query = "SELECT area_name FROM Areas"
             df = read_sql(query, con)
         return df
     
     def getCategoriesWithQuartile(self, quartiles=set()):
         with connect(self.dbPathOrUrl) as con:
             if not quartiles: # input collection empty, it's like all quartiles are specified
-                query = "SELECT * FROM CategoriesQuartile"
+                query = "SELECT category_name FROM CategoriesQuartile"
                 df = read_sql(query, con)
             else:
                 q = ', '.join(['?'] * len(quartiles)) # placeholders
                 query = f""" 
-                    SELECT * 
-                    FROM CategoriesQuartile
+                    SELECT DISTINCT category_name, quartile 
+                    FROM JournalCategories
+                    LEFT JOIN Categories ON Categories.category_id = JournalCategories.category_id
                     WHERE quartile IN ({q}) 
                     """   
                 df = read_sql(query, con, params=tuple(quartiles))
@@ -247,19 +276,14 @@ class CategoryQueryHandler(QueryHandler):
     def getCategoriesAssignedToAreas(self, area_ids=set()):
         with connect(self.dbPathOrUrl) as con:
             if not area_ids: # input collection empty, it's like all areas are specified
-                query = """
-                SELECT category_name, area_name 
-                FROM Categories
-                LEFT JOIN CategoriesAreas ON Categories.category_ids = CategoriesAreas.category_ids
-                LEFT JOIN Areas ON CategoriesAreas.area_ids = Areas.area_ids
-                """
+                query = "SELECT DISTINCT category_name FROM Categories"
             else:
                 q = ', '.join(['?'] * len(area_ids))
                 query = f"""
-                SELECT category_name, area_name 
+                SELECT DISTINCT category_name 
                 FROM Categories 
-                LEFT JOIN CategoriesAreas ON Categories.category_ids = CategoriesAreas.category_ids
-                LEFT JOIN Areas ON CategoriesAreas.area_ids = Areas.area_ids
+                LEFT JOIN CategoriesAreas ON Categories.category_id = CategoriesAreas.category_id
+                LEFT JOIN Areas ON CategoriesAreas.area_id = Areas.area_id
                 WHERE area_name in ({q})
                 """
             df = read_sql(query, con, params=tuple(area_ids))
@@ -268,15 +292,17 @@ class CategoryQueryHandler(QueryHandler):
     def getAreasAssignedToCategories(self, category_ids=set()):
         with connect(self.dbPathOrUrl) as con:
             if not category_ids:
-                query = "SELECT area_name FROM Areas"
+                query = "SELECT DISTINCT area_name FROM Areas"
             else:
                 q = ', '.join(['?'] * len(category_ids))
                 query = f"""
-                SELECT area_name, category_name
+                SELECT DISTINCT area_name
                 FROM Areas
-                LEFT JOIN CategoriesAreas ON Areas.area_ids = CategoriesAreas.area_ids
-                LEFT JOIN Categories ON CategoriesAreas.category_ids = Categories.category_ids
+                LEFT JOIN CategoriesAreas ON Areas.area_id = CategoriesAreas.area_id
+                LEFT JOIN Categories ON CategoriesAreas.category_id = Categories.category_id
                 WHERE category_name in ({q})
                 """
             df = read_sql(query, con, params=tuple(category_ids))
         return df.drop_duplicates().reset_index(drop=True) # To avoid repetitions, but could also use SELECT DISTINCT
+
+
