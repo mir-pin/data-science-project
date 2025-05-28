@@ -124,9 +124,9 @@ class Journal(IdentifiableEntity):
             FROM JournalAreas 
             LEFT JOIN Areas ON JournalAreas.area_id = Area.area_id
             LEFT JOIN JournalIds ON JournalIds.journal_id = JournalCategories.journal_id
-            WHERE j.identifier = ?
+            WHERE identifier = ?
             """
-            df = read_sql(query, con, params=(self.id,))
+            df = read_sql(query, con, params=(self.id))
         for _, row in df.iterrows():
             area = Area(ids=row["area_name"])
             result.append(item.id)
@@ -469,23 +469,24 @@ class FullQueryEngine(BasicQueryEngine):
 
     def getJournalsInCategoriesWithQuartile(self, categories: set[str], quartiles: set[str]):
         result =[]
-        for handler in self.journalQuery:
-            df_J = handler.getAllJournals()
-            df_C = handle.getAllCategories()
+
+        all_journal = super().getAllJournals()
+        cat_qua = category_ids.union(quartiles)
+
+        for journal in all_journals:
+            jou_cat = journal.getCategories()
+            for item in jou_cat:
+                if item[0] in cat_qua and item[1] in cat_qua:
+
+            result.append(journal.id)
+        return result 
         
-            for _, row in df_J.iterrows():
-                result.append()
         return result
       
 
     def getJournalsInAreasWithLicense(self, areas: set[str], licenses: set[str]):
         result =[]
-        for handler in self.journalQuery:
-            df_J = handler.getAllJournals()
-            df_A = handle.getAllAreas()
-        
-            for _, row in df_J.iterrows():
-                result.append()
+       
         return result
 
     def getDiamondJournalsInAreasAndCategoriesWithQuartile():
