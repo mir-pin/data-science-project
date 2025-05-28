@@ -50,18 +50,31 @@ class BasicQueryEngine(object):
         for handler in self.journalQuery:
             handler = QueryHandler()
             result = handler.getById(id)
-            for idx, row in result.iterrows():
-                return Journal(title = row["title"],
-                                  id = row["identifiers"],
-                                  languages = row["languages"],
-                                  publisher = row["publisher"],
-                                  seal = row["seal"],
-                                  licence = row["licence"],
-                                  apc = row["apc"],
-                                  hasCategory = row["hasCategory"],
-                                  hasArea = row["hasArea"])
-            
-        return None
+            if not result.empty:
+                for idx, row in result.iterrows():
+                    return Journal(title = row["title"],
+                                    id = row["identifiers"],
+                                    languages = row["languages"],
+                                    publisher = row["publisher"],
+                                    seal = row["seal"],
+                                    licence = row["licence"],
+                                    apc = row["apc"],
+                                    hasCategory = row["hasCategory"],
+                                    hasArea = row["hasArea"])
+            else:
+                for handler in self.categoryQuery:
+                    df = handler.getById(id)
+                    if not df.empty:
+                        # inspect dataframe columnd to determine if Category or Area
+                        if "category_name" in df.columns: # dealing with a Category
+                            for _, row in df.iterrows():
+                                return Category(id=row["category_name"], quartile=row.get("quartile"))
+                        elif "area_name" in df.columns: # dealing with an Area
+                            for _, row in df.iterrows():
+                                return Area(id=row["area_name"])
+                        else:
+                            return None # No matching entity found
+
     
     def getAllJournals(self):
         for handler in self.journalQuery:
