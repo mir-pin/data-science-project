@@ -18,38 +18,48 @@ class FullQueryEngine(BasicQueryEngine):
 
     def getJournalsInCategoriesWithQuartile(self, category_ids: set[str], quartiles: set[str]):
         result = []
+        journal_ids = set()
 
+        # Use just the first category handler to get the database path
         for handler in self.categoryQuery:
             path = handler.dbPathOrUrl
+            break
 
         
         with connect(path) as con:
-            q1 = list(category_ids)
-            q2 = list(quartiles)
-            query = f"""
-            SELECT DISTINCT identifier 
-            FROM JournalIds
-            LEFT JOIN JournalCategories ON JournalCategories.journal_id = JournalIds.journal_id
-            LEFT JOIN Categories ON Categories.category_id = JournalCategories.category_id
-            WHERE category_name IN ({q1})
-            """
+            
+            if not category_ids and not quartiles:
+                query = """
+                SELECT DISTINCT identifier 
+                FROM JournalIds
+                LEFT JOIN JournalCategories ON JournalCategories.journal_id = JournalIds.journal_id
+                LEFT JOIN Categories ON Categories.category_id = JournalCategories.category_id
+                """
+            else:
+                categories = ', '.join(list(category_ids))
+                quart = ', '.join(list(quartiles))
+                query = f"""
+                SELECT DISTINCT identifier 
+                FROM JournalIds
+                LEFT JOIN JournalCategories ON JournalCategories.journal_id = JournalIds.journal_id
+                LEFT JOIN Categories ON Categories.category_id = JournalCategories.category_id
+                WHERE category_name IN ({categories}) AND quartile in ({quart})
+                """
+
             df = read_sql(query, con)
 
-        print(df)
-
-
+        # Retrieve Journal objects by ID
+        for _, row in df.iterrows():
+            journal = self.getEntityById(row["identifier"])
+            if journal and journal.id not in journal.ids:
+                result.append(journal)
+                journal_ids.add(journal.id)
         
-
-        
-
-
-
-
-
-
-
-
         return result
+
+        
+
+
 
         
 
