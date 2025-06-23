@@ -1,5 +1,5 @@
-from impl.handlers import CategoryQueryHandler, JournalQueryHandler
-from impl.models import Journal, Category, Area
+
+from .models import Journal, Category, Area
 from sqlite3 import connect
 from pandas import read_sql
 import pandas as pd

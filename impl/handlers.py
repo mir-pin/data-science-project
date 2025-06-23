@@ -45,8 +45,8 @@ class JournalUploadHandler(UploadHandler):
             
             # setting the header of the graph database + combining the identifiers
             data_to_add.columns = ["Journal title", "id_print", "id_online", "Languages in which the journal accepts manuscripts", "Publisher", "DOAJ Seal", "Journal license", "APC"]
-            data_to_add["identifier"] = data_to_add["id_print"].fillna("") + "," + data_to_add["id_online"].fillna("")
-            data_to_add["identifier"] = data_to_add["identifier"].str.strip(",")
+            data_to_add["identifier"] = data_to_add["id_print"].fillna("") + ", " + data_to_add["id_online"].fillna("")
+            data_to_add["identifier"] = data_to_add["identifier"].str.strip(", ")
             data_to_add = data_to_add[["Journal title", "identifier", "Languages in which the journal accepts manuscripts", "Publisher", "DOAJ Seal", "Journal license", "APC"]]
 
             # creating an empty graph database
@@ -84,15 +84,15 @@ class JournalUploadHandler(UploadHandler):
 
             # storing data into Blazegraph
 
-            # store = SPARQLUpdateStore()
-            # endpoint = "http://127.0.0.1:9999/blazegraph/sparql"
+            store = SPARQLUpdateStore()
+            endpoint = "http://127.0.0.1:9999/blazegraph/sparql"
 
-            # store.open((endpoint, endpoint))
+            store.open((endpoint, endpoint))
 
-            # for triple in graph_db.triples((None, None, None)):
-            #     store.add(triple)
+            for triple in graph_db.triples((None, None, None)):
+                store.add(triple)
 
-            # store.close()
+            store.close()
 
             return True
         return False
@@ -379,8 +379,7 @@ class CategoryQueryHandler(QueryHandler):
         super().__init__()
     
     def getById(self, id):
-        con = connect(self.dbPathOrUrl)
-        try:
+        with connect(self.dbPathOrUrl) as con:
             queries = [
                 "SELECT * FROM Categories WHERE category_name = ?",
                 "SELECT * FROM Areas WHERE area_name = ?",
@@ -401,10 +400,6 @@ class CategoryQueryHandler(QueryHandler):
                 params = [f"%{i}%" for i in ids]
                 query = f"SELECT * FROM JournalIds WHERE {q}"
                 df = read_sql(query, con, params=params)
-
-        finally:
-            con.close()
-            del con  # del the connection
 
         return df
 
@@ -474,8 +469,7 @@ class CategoryQueryHandler(QueryHandler):
         q = " OR ".join(["identifier LIKE ?"] * len(ids))
         params = [f"%{i}%" for i in ids]   
 
-        con = connect(self.dbPathOrUrl)
-        try:
+        with connect(self.dbPathOrUrl) as con:
             query = f"""
                 SELECT DISTINCT category_name, quartile
                 FROM JournalCategories
@@ -484,10 +478,7 @@ class CategoryQueryHandler(QueryHandler):
                 WHERE {q};
                 """
             df = read_sql(query, con, params=params)
-
-        finally:
-            con.close()
-            del con  
+ 
         return df
 
 
@@ -496,8 +487,7 @@ class CategoryQueryHandler(QueryHandler):
         q = " OR ".join(["identifier LIKE ?"] * len(ids))
         params = [f"%{i}%" for i in ids]
 
-        con = connect(self.dbPathOrUrl)
-        try:
+        with connect(self.dbPathOrUrl) as con:
             query = f"""
                 SELECT DISTINCT area_name
                 FROM JournalAreas
@@ -506,9 +496,7 @@ class CategoryQueryHandler(QueryHandler):
                 WHERE {q};
                 """   
             df = read_sql(query, con, params=params)
-        finally:
-            con.close()
-            del con
+        
         return df
 
 

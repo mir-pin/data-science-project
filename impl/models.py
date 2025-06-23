@@ -1,5 +1,3 @@
-from sqlite3 import connect
-from pandas import read_sql
 
 class IdentifiableEntity(object):
     def __init__(self, id):
