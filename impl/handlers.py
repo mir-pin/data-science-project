@@ -481,7 +481,6 @@ class CategoryQueryHandler(QueryHandler):
  
         return df
 
-
     def addArea(self, id):
         ids = id.split(", ")
         q = " OR ".join(["identifier LIKE ?"] * len(ids))

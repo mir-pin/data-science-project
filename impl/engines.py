@@ -45,8 +45,8 @@ class BasicQueryEngine(object):
         if all_df:
             merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)    # to handle more handlers      # to handle more handlers 
             for _, row in merged_df.iterrows():
-                item = (Category(id=row["category_name"], quartile=row["quartile"]))    
-                result.append((item.id, item.quartile))
+                item = Category(id=row["category_name"], quartile=row["quartile"])    
+                result.append(item)
         return result
 
     def addArea(self, id):
@@ -60,8 +60,8 @@ class BasicQueryEngine(object):
         if all_df:
             merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
             for _, row in merged_df.iterrows():
-                item = (Area(id=row["area_name"]))
-                result.append(item.id)
+                item = Area(id=row["area_name"])
+                result.append(item)
         return result
     
     def getEntityById(self, id):

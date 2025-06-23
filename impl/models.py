@@ -1,19 +1,13 @@
 
 class IdentifiableEntity(object):
     def __init__(self, id):
-        # if id = string
-        if isinstance(id, str):
+        if isinstance(id, list):
             self.id = id
-        # if id = list -> string
-        elif isinstance(id, list):
-            self.id = ", ".join(id)
+        elif isinstance(id, str):
+            self.id = [id]
     
     def getIds(self):
-        ids = []
-        self.id = self.id.split(", ")
-        for item in self.id:
-            ids.append(item)
-        return ids
+        return self.id
 
 class Journal(IdentifiableEntity):
     def __init__(self, id, title, languages, publisher, seal, licence, apc, hasCategory=None, hasArea=None):
