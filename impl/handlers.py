@@ -446,7 +446,7 @@ class CategoryQueryHandler(QueryHandler):
                 WHERE area_name in ({q})
                 """
             df = read_sql(query, con, params=tuple(area_ids))
-        return df.drop_duplicates().reset_index(drop=True)
+        return df
      
     def getAreasAssignedToCategories(self, category_ids=set()):
         with connect(self.dbPathOrUrl) as con:
@@ -462,7 +462,7 @@ class CategoryQueryHandler(QueryHandler):
                 WHERE category_name in ({q})
                 """
             df = read_sql(query, con, params=tuple(category_ids))
-        return df.drop_duplicates().reset_index(drop=True) # To avoid repetitions, but could also use SELECT DISTINCT
+        return df # drop.duplicates To avoid repetitions, but could also use SELECT DISTINCT
 
     def addCategory(self, id):
         ids = id.split(", ")
