@@ -422,7 +422,7 @@ class CategoryQueryHandler(QueryHandler):
                 query = "SELECT category_name FROM CategoriesQuartile"
                 df = read_sql(query, con)
             else:
-                q = ', '.join(['?'] * len(quartiles)) # placeholders
+                q = ", ".join(["?"] * len(quartiles)) # placeholders
                 query = f""" 
                     SELECT DISTINCT category_name, quartile 
                     FROM JournalCategories
@@ -437,7 +437,7 @@ class CategoryQueryHandler(QueryHandler):
             if not area_ids: # input collection empty, it's like all areas are specified
                 query = "SELECT DISTINCT category_name FROM Categories"
             else:
-                q = ', '.join(['?'] * len(area_ids))
+                q = ", ".join(["?"] * len(area_ids))
                 query = f"""
                 SELECT DISTINCT category_name 
                 FROM Categories 
@@ -453,7 +453,7 @@ class CategoryQueryHandler(QueryHandler):
             if not category_ids:
                 query = "SELECT DISTINCT area_name FROM Areas"
             else:
-                q = ', '.join(['?'] * len(category_ids))
+                q = ", ".join(["?"] * len(category_ids))
                 query = f"""
                 SELECT DISTINCT area_name
                 FROM Areas
