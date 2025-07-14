@@ -1,5 +1,4 @@
-
-from .models import Journal, Category, Area
+from models import Journal, Category, Area
 from sqlite3 import connect
 from pandas import read_sql
 import pandas as pd
@@ -43,7 +42,7 @@ class BasicQueryEngine(object):
                 all_df.append(df)
 
         if all_df:
-            merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)    # to handle more handlers      # to handle more handlers 
+            merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)    # to handle more handlers
             for _, row in merged_df.iterrows():
                 item = Category(id=row["category_name"], quartile=row["quartile"])    
                 result.append(item)
@@ -136,9 +135,9 @@ class BasicQueryEngine(object):
 
     def getAllJournals(self):
         result = []
+        all_df = []
         for handler in self.journalQuery:
             df = handler.getAllJournals()
-            all_df = []
             all_df.append(df)
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
 
@@ -158,9 +157,9 @@ class BasicQueryEngine(object):
     
     def getJournalsWithTitle(self, partialTitle):
         result = []
+        all_df = []
         for handler in self.journalQuery:
             df = handler.getJournalsWithTitle(partialTitle)
-            all_df = []
             all_df.append(df)
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
 
@@ -180,9 +179,9 @@ class BasicQueryEngine(object):
         
     def getJournalsPublishedBy(self, partialName):
         result = []
+        all_df = []
         for handler in self.journalQuery:
             df = handler.getJournalsPublishedBy(partialName)
-            all_df = []
             all_df.append(df)
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
 
@@ -202,9 +201,9 @@ class BasicQueryEngine(object):
         
     def getJournalsWithLicense(self, licenses):
         result = []
+        all_df = []
         for handler in self.journalQuery:
             df = handler.getJournalsWithLicense(licenses)
-            all_df = []
             all_df.append(df)
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
 
@@ -224,9 +223,9 @@ class BasicQueryEngine(object):
 
     def getJournalsWithAPC(self):
         result = []
+        all_df = []
         for handler in self.journalQuery:
             df = handler.getJournalsWithAPC()
-            all_df = []
             all_df.append(df)
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
 
@@ -246,9 +245,9 @@ class BasicQueryEngine(object):
     
     def getJournalsWithDOAJSeal(self):
         result = []
+        all_df = []
         for handler in self.journalQuery:
             df = handler.getJournalsWithDOAJSeal()
-            all_df = []
             all_df.append(df)
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
 
@@ -268,9 +267,9 @@ class BasicQueryEngine(object):
 
     def getAllCategories(self):
         result = []
+        all_df = []
         for handler in self.categoryQuery:
             df = handler.getAllCategories()  # returns a DataFrame
-            all_df = []
             all_df.append(df)
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
         for _, row in merged_df.iterrows():        # _ = index
@@ -279,9 +278,9 @@ class BasicQueryEngine(object):
         
     def getAllAreas(self):
         result = []
+        all_df = []
         for handler in self.categoryQuery:
             df = handler.getAllAreas()
-            all_df = []
             all_df.append(df)
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
         for _, row in merged_df.iterrows():
@@ -290,9 +289,9 @@ class BasicQueryEngine(object):
 
     def getCategoriesWithQuartile(self, quartiles):
         result = []
+        all_df = []
         for handler in self.categoryQuery:
             df = handler.getCategoriesWithQuartile(quartiles)
-            all_df = []
             all_df.append(df)
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
         
@@ -303,9 +302,9 @@ class BasicQueryEngine(object):
 
     def getCategoriesAssignedToAreas(self, area_ids):
         result = []
+        all_df = []
         for handler in self.categoryQuery:
             df = handler.getCategoriesAssignedToAreas(area_ids)
-            all_df = []
             all_df.append(df)
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
 
@@ -315,9 +314,9 @@ class BasicQueryEngine(object):
         
     def getAreasAssignedToCategories(self, category_ids):
         result = []
+        all_df = []
         for handler in self.categoryQuery:
             df = handler.getAreasAssignedToCategories(category_ids)
-            all_df = []
             all_df.append(df)
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
         
@@ -375,14 +374,14 @@ class FullQueryEngine(BasicQueryEngine):
         # retrieve the journals
         for id in identifiers:
             journal = super().getEntityById(id)
-            if journal:
+            if journal and journal not in result:
                 result.append(journal)
 
         return result
 
 
     def getJournalsInAreasWithLicense(self, area_ids: set[str], licenses: set[str]):
-        area_identifiers = set()
+        area_identifiers = []
         for handler in self.categoryQuery:
             path = handler.dbPathOrUrl
 
@@ -408,20 +407,31 @@ class FullQueryEngine(BasicQueryEngine):
                     df = read_sql(query, con, params=list(area_ids))
 
                 # create a set of identifiers from areas
-                area_identifiers.update(df["identifier"].tolist())
+                area_identifiers.extend(df["identifier"].tolist())
 
         # get all licensed journals
+        licensed_journals = []
         if not licenses:
             licensed_journals = super().getAllJournals()
         else:
-            licensed_journals = super().getJournalsWithLicense(licenses)
+            for license in licenses:
+                jou = super().getJournalsWithLicense({license})
+                licensed_journals.extend(jou)
 
         # filter licensed journals by area
+        seen = set()
         result = []
-        for journal in licensed_journals:
-            if journal.id in area_identifiers:
-                result.append(journal)
 
+        for journal in licensed_journals:
+            if journal not in seen:
+                jou_ids = journal.getIds()
+                for jou_id in jou_ids:
+                    splitted_ids = jou_id.split(",")
+                    if any(id.strip() in area_identifiers for id in splitted_ids):
+                        result.append(journal)
+                        seen.add(journal)
+                        break
+            
         return result
 
     def getDiamondJournalsInAreasAndCategoriesWithQuartile(self, area_ids: set[str], category_ids: set[str], quartiles: set[str]):
@@ -484,7 +494,7 @@ class FullQueryEngine(BasicQueryEngine):
                 area_identifiers.update(df_area["identifier"].tolist())
                 cat_identifiers.update(df_cat["identifier"].tolist())
        
-       # Intersection
+        # Intersection
         cat_area_ids = cat_identifiers.intersection(area_identifiers)
 
         # get journals with no apc
@@ -513,5 +523,5 @@ class FullQueryEngine(BasicQueryEngine):
         # retrieve the journals
         for id in cat_area_apc:
             journal = super().getEntityById(id)
-            result.append(journal)
+            result.append(journal) 
         return result

@@ -403,7 +403,6 @@ class CategoryQueryHandler(QueryHandler):
 
         return df
 
-
     def getAllCategories(self):
         with connect(self.dbPathOrUrl) as con:
             query = "SELECT category_name FROM Categories"
@@ -462,7 +461,7 @@ class CategoryQueryHandler(QueryHandler):
                 WHERE category_name in ({q})
                 """
             df = read_sql(query, con, params=tuple(category_ids))
-        return df # drop.duplicates To avoid repetitions, but could also use SELECT DISTINCT
+        return df
 
     def addCategory(self, id):
         ids = id.split(", ")
@@ -497,5 +496,4 @@ class CategoryQueryHandler(QueryHandler):
             df = read_sql(query, con, params=params)
         
         return df
-
-
+    
