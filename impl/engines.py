@@ -1,4 +1,4 @@
-from models import Journal, Category, Area
+from .models import Journal, Category, Area
 from sqlite3 import connect
 from pandas import read_sql
 import pandas as pd
@@ -76,7 +76,7 @@ class BasicQueryEngine(object):
                 row = jou_merged_df.iloc[0]
                 return Journal(title = row["title"],
                             id = row["identifier"],
-                            languages = row["languages"],
+                            languages = [item for item in row["languages"].split(", ") if item],
                             publisher = row["publisher"],
                             seal = row["seal"],
                             licence = row["licence"],
@@ -145,7 +145,7 @@ class BasicQueryEngine(object):
             id = row["identifier"]
             journal = Journal(title = row["title"],
                               id = row["identifier"],
-                              languages = row["languages"],
+                              languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
                               licence = row["licence"],
@@ -167,7 +167,7 @@ class BasicQueryEngine(object):
             id = row["identifier"]
             journal = Journal(title = row["title"],
                               id = row["identifier"],
-                              languages = row["languages"],
+                              languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
                               licence = row["licence"],
@@ -189,7 +189,7 @@ class BasicQueryEngine(object):
             id = row["identifier"]
             journal = Journal(title = row["title"],
                               id = row["identifier"],
-                              languages = row["languages"],
+                              languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
                               licence = row["licence"],
@@ -211,7 +211,7 @@ class BasicQueryEngine(object):
             id = row["identifier"]
             journal = Journal(title = row["title"],
                               id = row["identifier"],
-                              languages = row["languages"],
+                              languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
                               licence = row["licence"],
@@ -233,7 +233,7 @@ class BasicQueryEngine(object):
             id = row["identifier"]
             journal = Journal(title = row["title"],
                               id = row["identifier"],
-                              languages = row["languages"],
+                              languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
                               licence = row["licence"],
@@ -255,7 +255,7 @@ class BasicQueryEngine(object):
             id = row["identifier"]
             journal = Journal(title = row["title"],
                               id = row["identifier"],
-                              languages = row["languages"],
+                              languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
                               licence = row["licence"],
@@ -498,7 +498,7 @@ class FullQueryEngine(BasicQueryEngine):
         cat_area_ids = cat_identifiers.intersection(area_identifiers)
 
         # get journals with no apc
-        endpoint = "http://127.0.0.1:9999/blazegraph/sparql"    
+        endpoint = self.dbPathOrUrl    
         query = """
             PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             PREFIX schema: <https://schema.org/>

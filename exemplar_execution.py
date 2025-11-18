@@ -45,9 +45,10 @@ que.addCategoryHandler(cat_qh)
 que.addJournalHandler(jou_qh)
 
 result_q1 = que.getAllJournals()
-result_q2 = que.getJournalsInCategoriesWithQuartile({"Artificial Intelligence", "Oncology"}, {"Q1"})
-result_q3 = que.getEntityById("Artificial Intelligence")
-result_q4 = que.getEntityById("2532-8816")
+# result_q2 = que.getJournalsInCategoriesWithQuartile({"Artificial Intelligence", "Oncology"}, {"Q1"})
+# result_q3 = que.getEntityById("Artificial Intelligence")
+# result_q4 = que.getEntityById("2532-8816")
+print(len(result_q1))
 # etc...
 
 

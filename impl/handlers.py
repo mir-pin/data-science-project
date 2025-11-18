@@ -85,12 +85,13 @@ class JournalUploadHandler(UploadHandler):
             # storing data into Blazegraph
 
             store = SPARQLUpdateStore()
-            endpoint = "http://127.0.0.1:9999/blazegraph/sparql"
+            endpoint = self.dbPathOrUrl
 
             store.open((endpoint, endpoint))
 
-            for triple in graph_db.triples((None, None, None)):
-                store.add(triple)
+            data = graph_db.serialize(format="turtle")
+            query = f"INSERT DATA {{\n{data}\n}}"
+            store.update(query)
 
             store.close()
 
@@ -212,7 +213,7 @@ class JournalQueryHandler(QueryHandler):
     
     def getById(self, id):
         # checking if the id exists in the csv file
-        endpoint = "http://127.0.0.1:9999/blazegraph/sparql"
+        endpoint = self.dbPathOrUrl
         query = f"""
             PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             PREFIX schema: <https://schema.org/>
@@ -235,7 +236,7 @@ class JournalQueryHandler(QueryHandler):
         return journal_df
 
     def getAllJournals(self):
-        endpoint = "http://127.0.0.1:9999/blazegraph/sparql"
+        endpoint = self.dbPathOrUrl
         query = """
             PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             PREFIX schema: <https://schema.org/>
@@ -257,7 +258,7 @@ class JournalQueryHandler(QueryHandler):
         return df_all_journals
     
     def getJournalsWithTitle(self, partialTitle):
-        endpoint = "http://127.0.0.1:9999/blazegraph/sparql"    
+        endpoint = self.dbPathOrUrl    
         query = f"""
             PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             PREFIX schema: <https://schema.org/>
@@ -279,7 +280,7 @@ class JournalQueryHandler(QueryHandler):
         return df_title
     
     def getJournalsPublishedBy(self, partialName):
-        endpoint = "http://127.0.0.1:9999/blazegraph/sparql"    
+        endpoint = self.dbPathOrUrl    
         query = f"""
             PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             PREFIX schema: <https://schema.org/>
@@ -301,7 +302,7 @@ class JournalQueryHandler(QueryHandler):
         return df_publisher
     
     def getJournalsWithLicense(self, licenses):
-        endpoint = "http://127.0.0.1:9999/blazegraph/sparql"
+        endpoint = self.dbPathOrUrl
 
         # converting the set in a list, the list in a string
         list_licenses = []
@@ -331,7 +332,7 @@ class JournalQueryHandler(QueryHandler):
         return df_licence
 
     def getJournalsWithAPC(self):
-        endpoint = "http://127.0.0.1:9999/blazegraph/sparql"    
+        endpoint = self.dbPathOrUrl    
         query = """
             PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             PREFIX schema: <https://schema.org/>
@@ -353,7 +354,7 @@ class JournalQueryHandler(QueryHandler):
         return df_apc
 
     def getJournalsWithDOAJSeal(self):
-        endpoint = "http://127.0.0.1:9999/blazegraph/sparql"    
+        endpoint = self.dbPathOrUrl    
         query = """
             PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             PREFIX schema: <https://schema.org/>
