@@ -15,7 +15,7 @@ from impl import FullQueryEngine
 rel_path = "relational.db"
 cat = CategoryUploadHandler()
 cat.setDbPathOrUrl(rel_path)
-cat.pushDataToDb("data/scimago.json")
+# cat.pushDataToDb("data/scimago.json")
 # Please remember that one could, in principle, push one or more files
 # calling the method one or more times (even calling the method twice
 # specifying the same file!)
@@ -25,7 +25,7 @@ cat.pushDataToDb("data/scimago.json")
 grp_endpoint = "http://127.0.0.1:9999/blazegraph/sparql"
 jou = JournalUploadHandler()
 jou.setDbPathOrUrl(grp_endpoint)
-jou.pushDataToDb("data/doaj.csv")
+# jou.pushDataToDb("data/doaj.csv")
 # Please remember that one could, in principle, push one or more files
 # calling the method one or more times (even calling the method twice
 # specifying the same file!)
@@ -44,11 +44,12 @@ que = FullQueryEngine()
 que.addCategoryHandler(cat_qh)
 que.addJournalHandler(jou_qh)
 
-result_q1 = que.getAllJournals()
+# result_q1 = que.getAllJournals()
 # result_q2 = que.getJournalsInCategoriesWithQuartile({"Artificial Intelligence", "Oncology"}, {"Q1"})
 # result_q3 = que.getEntityById("Artificial Intelligence")
 # result_q4 = que.getEntityById("2532-8816")
-print(len(result_q1))
+result = que.getDiamondJournalsInAreasAndCategoriesWithQuartile({"Arts and Humanities"}, {"Arts and Humanities (miscellaneous)"}, {"Q1"})
+print(len(result))
 # etc...
 
 
