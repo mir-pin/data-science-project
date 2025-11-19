@@ -325,7 +325,7 @@ class JournalQueryHandler(QueryHandler):
                     wiki:Q162919 ?seal ;
                     schema:license ?licence ;
                     wiki:Q15291071 ?apc .
-                    FILTER(STR(?licence) IN ("{filter_str}"))
+                    FILTER(CONTAINS(CONCAT(", ", STR(?licence), ", "), ", {licenses}, "))
                     }}
             """
         df_licence = get(endpoint, query, True)
