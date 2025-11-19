@@ -529,7 +529,6 @@ class FullQueryEngine(BasicQueryEngine):
 
 
     def getDiamondJournalsInAreasAndCategoriesWithQuartile(self, area_ids: set[str], category_ids: set[str], quartiles: set[str]):
-
         result = []
         matched_identifiers = set()
 
@@ -537,20 +536,19 @@ class FullQueryEngine(BasicQueryEngine):
             path = handler.dbPathOrUrl
 
             with connect(path) as con:
-
-                # Convert sets to deterministic lists
+                # Convert sets to lists
                 area_list = list(area_ids)
                 cat_list = list(category_ids)
                 quart_list = list(quartiles)
 
-                # If any is empty → no intersection possible
+                # If input sets are empty :
                 if not area_list or not cat_list or not quart_list:
                     return pd.DataFrame(columns=["identifier"])
 
                 # Create placeholders for Areas
                 area_placeholders = ", ".join(["?"] * len(area_list))
 
-                # Build OR-of-ANDs conditions for (category_name, quartile) pairs
+                # Build conditions for (category_name, quartile) pairs
                 pair_conditions = []
                 pair_params = []
 
@@ -564,7 +562,6 @@ class FullQueryEngine(BasicQueryEngine):
                 # Merge all OR conditions into one clause
                 pair_clause = " OR ".join(pair_conditions)
 
-                # Final SQL query (compatible with SQLite)
                 query = f"""
                 SELECT DISTINCT JournalIds.identifier
                 FROM JournalIds
@@ -578,60 +575,12 @@ class FullQueryEngine(BasicQueryEngine):
 
                 # Parameters: all areas first, then all (category, quartile) pairs
                 params = area_list + pair_params
-
-                # Execute
                 df = pd.read_sql_query(query, con, params=params)
 
-                # return df 
-            
+                # Update list of matched identifiers
                 matched_identifiers.update(df["identifier"].tolist())
 
-
-                # # PRIMO TENTATIVO 
-                # -------------------------------------------
-                # # CASE 1: nothing selected → return all journals
-                # # -------------------------------------------
-                # if not area_ids or not category_ids or not quartiles:
-                #     query = """
-                #     SELECT DISTINCT identifier
-                #     FROM JournalIds
-                #     """
-                #     df = read_sql(query, con)
-                #     matched_identifiers.update(df["identifier"].tolist())
-                #     continue
-
-                # # -------------------------------------------
-                # # CASE 2: build dynamic placeholders 
-                # #         and use ONE correct SQL query
-                # # -------------------------------------------
-                # # placeholders for area names
-                # area_placeholders = ", ".join(["?"] * len(area_ids))
-
-                # # build (category, quartile) pairs
-                # pairs = [(c, q) for c in category_ids for q in quartiles]
-                # pair_placeholders = ", ".join(["(?, ?)"] * len(pairs))
-
-                # # final params list
-                # # first all areas, then each (cat, quart) flattened
-                # params = list(area_ids) + [item for p in pairs for item in p]
-
-                # query = f"""
-                # SELECT DISTINCT identifier
-                # FROM JournalIds
-                # JOIN JournalAreas ON JournalAreas.journal_id = JournalIds.journal_id
-                # JOIN Areas ON Areas.area_id = JournalAreas.area_id
-                # JOIN JournalCategories ON JournalCategories.journal_id = JournalIds.journal_id
-                # JOIN Categories ON Categories.category_id = JournalCategories.category_id
-                # WHERE area_name IN ({area_placeholders})
-                # AND (category_name, quartile) IN ({pair_placeholders})
-                # """
-
-                # df = read_sql(query, con, params=params)
-                # matched_identifiers.update(df["identifier"].tolist())
-
-        # ---------------------------------------------------------
-        # 2️⃣ Apply APC (diamond) filter with your SPARQL query
-        # ---------------------------------------------------------
+        # Filter journals without APC (diamond)
         endpoint = self.journalQuery[0].getDbPathOrUrl()    
         query = """
             PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -653,28 +602,23 @@ class FullQueryEngine(BasicQueryEngine):
         """
         df_apc = get(endpoint, query, True)
 
-        # build diamond_identifiers by splitting pairs
+        # Build diamond_identifiers by splitting pairs
         diamond_identifiers = set()
         for raw in df_apc["identifier"].astype(str).tolist():
             parts = [p.strip() for p in raw.split(",") if p.strip()]
             diamond_identifiers.update(parts)
 
-
+        # Keep only journals that match input sets + diamond APC
         final_identifiers = matched_identifiers.intersection(diamond_identifiers)
 
-        # diamond_identifiers = set(df_apc["identifier"].tolist())
+     
+        # Retrieve the journal objects
+        jou_seen = []
 
-        # keep only journals that match SQL + diamond APC
-        # final_identifiers = matched_identifiers.intersection(diamond_identifiers)
-        # final_identifiers = []
-        # for item in matched_identifiers:
-        #     if item in diamond_identifiers:
-        #         final_identifiers.append(item)
-        # ---------------------------------------------------------
-        # 3️⃣ Retrieve the journal objects
-        # ---------------------------------------------------------
         for identifier in final_identifiers:
             journal = super().getEntityById(identifier)
-            result.append(journal)
+            if journal.getTitle() not in jou_seen:
+                jou_seen.append(journal.getTitle())
+                result.append(journal)
 
         return result
