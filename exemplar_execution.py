@@ -48,41 +48,31 @@ que.addJournalHandler(jou_qh)
 # result_q2 = que.getJournalsInCategoriesWithQuartile({"Artificial Intelligence", "Oncology"}, {"Q1"})
 # result_q3 = que.getEntityById("Artificial Intelligence")
 # result_q4 = que.getEntityById("2532-8816")
-result = que.getDiamondJournalsInAreasAndCategoriesWithQuartile({"Arts and Humanities"}, {"Arts and Humanities (miscellaneous)"}, {"Q1", "Q2"})
-for i in result:
-    print(i.getTitle())
+# result = que.getDiamondJournalsInAreasAndCategoriesWithQuartile({"Arts and Humanities"}, {"Arts and Humanities (miscellaneous)"}, {"Q1"})
+# for i in result:
+#     print(i.getTitle())
+
+result = que.getDiamondJournalsInAreasAndCategoriesWithQuartile(
+    {"Business, Management and Accounting"},
+    {"Finance", "Accounting"},
+    {"Q1", "Q3"},
+)
+
 
 print(len(result))
 
+# import time
 
-import time
-from datetime import datetime
+# start = time.time()
 
-def time_long_run(func, *args, **kwargs):
-    print(f"Starting '{func.__name__}' at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+# result_q1 = que.getAllJournals()
+# print(len(result_q1))
 
-    start_wall = time.time()
-    start_perf = time.perf_counter()
+# # print(len(result_q1))
+# end = time.time()
 
-    result = func(*args, **kwargs)
+# print("Execution time:", end - start, "seconds")
 
-    end_wall = time.time()
-    end_perf = time.perf_counter()
-
-    print(f"Finished '{func.__name__}' at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Total time (wall clock): {(end_wall - start_wall)/60:.2f} minutes")
-    print(f"Total time (CPU/perf counter): {(end_perf - start_perf):.2f} seconds")
-
-    return result
-
-
-# --- Usage Example ---
-# Instead of calling your function like this:
-#    output = your_method(x, y, z)
-
-# Do this:
-# output = time_long_run(que.getAllJournals())
-# print(output)
 # etc...
 
 
