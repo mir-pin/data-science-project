@@ -44,34 +44,20 @@ que = FullQueryEngine()
 que.addCategoryHandler(cat_qh)
 que.addJournalHandler(jou_qh)
 
-# result_q1 = len(que.getAllJournals())
+# result_q1 = que.getAllJournals()
 # result_q2 = que.getJournalsInCategoriesWithQuartile({"Artificial Intelligence", "Oncology"}, {"Q1"})
 # result_q3 = que.getEntityById("Artificial Intelligence")
 # result_q4 = que.getEntityById("2532-8816")
 # result = que.getDiamondJournalsInAreasAndCategoriesWithQuartile({"Arts and Humanities"}, {"Arts and Humanities (miscellaneous)"}, {"Q1"})
-# for i in result:
-#     print(i.getTitle())
+
+
 
 result = que.getDiamondJournalsInAreasAndCategoriesWithQuartile(
     {"Business, Management and Accounting"},
     {"Finance", "Accounting"},
     {"Q1", "Q3"},
 )
-
-
-print(len(result))
-
-# import time
-
-# start = time.time()
-
-# result_q1 = que.getAllJournals()
-# print(len(result_q1))
-
-# # print(len(result_q1))
-# end = time.time()
-
-# print("Execution time:", end - start, "seconds")
+# print(len(result))
 
 # etc...
 
