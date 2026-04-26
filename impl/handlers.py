@@ -83,7 +83,6 @@ class JournalUploadHandler(UploadHandler):
                 graph_db.add((subj, apc, Literal(row["APC"])))
 
             # storing data into Blazegraph
-
             store = SPARQLUpdateStore()
             endpoint = self.dbPathOrUrl
 
@@ -221,13 +220,13 @@ class JournalQueryHandler(QueryHandler):
 
             SELECT ?journal ?identifier ?title ?languages ?publisher ?seal ?licence ?apc
             WHERE {{ ?journal schema:identifier ?identifier ;
-                    rdf:type schema:Periodical ;
-                    schema:name ?title ;
-                    schema:Language ?languages ;
-                    schema:publisher ?publisher ;
-                    wiki:Q162919 ?seal ;
-                    schema:license ?licence ;
-                    wiki:Q15291071 ?apc .
+                        rdf:type schema:Periodical ;
+                        schema:name ?title ;
+                        schema:Language ?languages ;
+                        schema:publisher ?publisher ;
+                        wiki:Q162919 ?seal ;
+                        schema:license ?licence ;
+                        wiki:Q15291071 ?apc .
                     FILTER(CONTAINS(?identifier, "{id}"))
                     }}
             """
@@ -244,14 +243,14 @@ class JournalQueryHandler(QueryHandler):
             
             SELECT ?journal ?title ?identifier ?languages ?publisher ?seal ?licence ?apc
             WHERE {
-            ?journal rdf:type schema:Periodical ;
-                schema:name ?title ;
-                schema:identifier ?identifier ;
-                schema:Language ?languages ;
-                schema:publisher ?publisher ;
-                wiki:Q162919 ?seal ;
-                schema:license ?licence ;
-                wiki:Q15291071 ?apc .
+                ?journal rdf:type schema:Periodical ;
+                    schema:name ?title ;
+                    schema:identifier ?identifier ;
+                    schema:Language ?languages ;
+                    schema:publisher ?publisher ;
+                    wiki:Q162919 ?seal ;
+                    schema:license ?licence ;
+                    wiki:Q15291071 ?apc .
             }
             """
         df_all_journals = get(endpoint, query, True)
@@ -266,13 +265,13 @@ class JournalQueryHandler(QueryHandler):
 
             SELECT ?journal ?title ?identifier ?languages ?publisher ?seal ?licence ?apc
             WHERE {{ ?journal rdf:type schema:Periodical ;
-                    schema:name ?title ;
-                    schema:identifier ?identifier ;
-                    schema:Language ?languages ;
-                    schema:publisher ?publisher ;
-                    wiki:Q162919 ?seal ;
-                    schema:license ?licence ;
-                    wiki:Q15291071 ?apc .
+                        schema:name ?title ;
+                        schema:identifier ?identifier ;
+                        schema:Language ?languages ;
+                        schema:publisher ?publisher ;
+                        wiki:Q162919 ?seal ;
+                        schema:license ?licence ;
+                        wiki:Q15291071 ?apc .
                     FILTER(CONTAINS(LCASE(STR(?title)), LCASE("{partialTitle}")))
                     }}
             """
@@ -288,13 +287,13 @@ class JournalQueryHandler(QueryHandler):
 
             SELECT ?journal ?title ?identifier ?languages ?publisher ?seal ?licence ?apc
             WHERE {{ ?journal rdf:type schema:Periodical ;
-                    schema:name ?title ;
-                    schema:identifier ?identifier ;
-                    schema:Language ?languages ;
-                    schema:publisher ?publisher ;
-                    wiki:Q162919 ?seal ;
-                    schema:license ?licence ;
-                    wiki:Q15291071 ?apc .
+                        schema:name ?title ;
+                        schema:identifier ?identifier ;
+                        schema:Language ?languages ;
+                        schema:publisher ?publisher ;
+                        wiki:Q162919 ?seal ;
+                        schema:license ?licence ;
+                        wiki:Q15291071 ?apc .
                     FILTER(CONTAINS(STR(LCASE(?publisher)), LCASE("{partialName}")))
                     }}
             """
@@ -307,9 +306,10 @@ class JournalQueryHandler(QueryHandler):
         # converting the set in a list, the list in a string
         list_licenses = []
         for licence in licenses:
-            list_licenses.append(licence)
+            condition = f'CONTAINS(CONCAT(", ", STR(?licence), ", "), ", {licence}, ")'
+            list_licenses.append(condition)
         
-        filter_str = ", ".join(list_licenses)
+        filter_str = " || ".join(list_licenses)
 
         query = f"""
             PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -318,18 +318,19 @@ class JournalQueryHandler(QueryHandler):
 
             SELECT ?journal ?title ?identifier ?languages ?publisher ?seal ?licence ?apc
             WHERE {{ ?journal rdf:type schema:Periodical ;
-                    schema:name ?title ;
-                    schema:identifier ?identifier ;
-                    schema:Language ?languages ;
-                    schema:publisher ?publisher ;
-                    wiki:Q162919 ?seal ;
-                    schema:license ?licence ;
-                    wiki:Q15291071 ?apc .
-                    FILTER(CONTAINS(CONCAT(", ", STR(?licence), ", "), ", {licenses}, "))
+                        schema:name ?title ;
+                        schema:identifier ?identifier ;
+                        schema:Language ?languages ;
+                        schema:publisher ?publisher ;
+                        wiki:Q162919 ?seal ;
+                        schema:license ?licence ;
+                        wiki:Q15291071 ?apc .
+                    FILTER({filter_str})
                     }}
             """
         df_licence = get(endpoint, query, True)
         return df_licence
+    
 
     def getJournalsWithAPC(self):
         endpoint = self.dbPathOrUrl    
@@ -340,13 +341,13 @@ class JournalQueryHandler(QueryHandler):
 
             SELECT ?journal ?title ?identifier ?languages ?publisher ?seal ?licence ?apc
             WHERE { ?journal rdf:type schema:Periodical ;
-                    schema:name ?title ;
-                    schema:identifier ?identifier ;
-                    schema:Language ?languages ;
-                    schema:publisher ?publisher ;
-                    wiki:Q162919 ?seal ;
-                    schema:license ?licence ;
-                    wiki:Q15291071 ?apc .
+                        schema:name ?title ;
+                        schema:identifier ?identifier ;
+                        schema:Language ?languages ;
+                        schema:publisher ?publisher ;
+                        wiki:Q162919 ?seal ;
+                        schema:license ?licence ;
+                        wiki:Q15291071 ?apc .
                     FILTER(?apc = True)
                     }
             """
@@ -362,13 +363,13 @@ class JournalQueryHandler(QueryHandler):
 
             SELECT ?journal ?title ?identifier ?languages ?publisher ?seal ?licence ?apc
             WHERE { ?journal rdf:type schema:Periodical ;
-                    schema:name ?title ;
-                    schema:identifier ?identifier ;
-                    schema:Language ?languages ;
-                    schema:publisher ?publisher ;
-                    wiki:Q162919 ?seal ;
-                    schema:license ?licence ;
-                    wiki:Q15291071 ?apc .
+                        schema:name ?title ;
+                        schema:identifier ?identifier ;
+                        schema:Language ?languages ;
+                        schema:publisher ?publisher ;
+                        wiki:Q162919 ?seal ;
+                        schema:license ?licence ;
+                        wiki:Q15291071 ?apc .
                     FILTER(?seal = True)
                     }
             """
