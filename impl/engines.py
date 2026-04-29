@@ -75,7 +75,7 @@ class BasicQueryEngine(object):
             if not jou_merged_df.empty:
                 row = jou_merged_df.iloc[0]
                 return Journal(title = row["title"],
-                            id = row["identifier"],
+                            id = [item for item in row["identifier"].split(",") if item],
                             languages = [item for item in row["languages"].split(", ") if item],
                             publisher = row["publisher"],
                             seal = row["seal"],
@@ -144,7 +144,7 @@ class BasicQueryEngine(object):
         for _, row in merged_df.iterrows():
             id = row["identifier"]
             journal = Journal(title = row["title"],
-                              id = row["identifier"],
+                              id = [item for item in row["identifier"].split(",") if item],
                               languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
@@ -166,7 +166,7 @@ class BasicQueryEngine(object):
         for _, row in merged_df.iterrows():
             id = row["identifier"]
             journal = Journal(title = row["title"],
-                              id = row["identifier"],
+                              id = [item for item in row["identifier"].split(",") if item],
                               languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
@@ -188,7 +188,7 @@ class BasicQueryEngine(object):
         for _, row in merged_df.iterrows():
             id = row["identifier"]
             journal = Journal(title = row["title"],
-                              id = row["identifier"],
+                              id = [item for item in row["identifier"].split(",") if item],
                               languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
@@ -210,7 +210,7 @@ class BasicQueryEngine(object):
         for _, row in merged_df.iterrows():
             id = row["identifier"]
             journal = Journal(title = row["title"],
-                              id = row["identifier"],
+                              id = [item for item in row["identifier"].split(",") if item],
                               languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
@@ -232,7 +232,7 @@ class BasicQueryEngine(object):
         for _, row in merged_df.iterrows():
             id = row["identifier"]
             journal = Journal(title = row["title"],
-                              id = row["identifier"],
+                              id = [item for item in row["identifier"].split(",") if item],
                               languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
@@ -254,7 +254,7 @@ class BasicQueryEngine(object):
         for _, row in merged_df.iterrows():
             id = row["identifier"]
             journal = Journal(title = row["title"],
-                              id = row["identifier"],
+                              id = [item for item in row["identifier"].split(",") if item],
                               languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
@@ -372,10 +372,27 @@ class FullQueryEngine(BasicQueryEngine):
                     identifiers.add(id)
         
         # retrieve the journals
-        for id in identifiers:
-            journal = super().getEntityById(id)
-            if journal and journal not in result:
-                result.append(journal)
+        all_df = []
+        for handler in self.journalQuery:
+            for id in identifiers:
+                df_journal = handler.getById(id)
+                if df_journal is not None and not df_journal.empty:
+                    all_df.append(df_journal)
+
+        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)   
+        
+        for _, row in merged_df.iterrows():
+            id = row["identifier"]
+            journal = Journal(title = row["title"],
+                              id = [item for item in row["identifier"].split(",") if item],
+                              languages = [item for item in row["languages"].split(", ") if item],
+                              publisher = row["publisher"],
+                              seal = row["seal"],
+                              licence = row["licence"],
+                              apc = row["apc"],
+                              hasCategory = self.addCategory(id),
+                              hasArea = self.addArea(id))
+            result.append(journal)
 
         return result
 
@@ -436,92 +453,90 @@ class FullQueryEngine(BasicQueryEngine):
 
     def getDiamondJournalsInAreasAndCategoriesWithQuartile(self, area_ids: set[str], category_ids: set[str], quartiles: set[str]):
         result = []
-        area_identifiers = set()
-        cat_identifiers = set()
+        matched_identifiers = set()
 
         for handler in self.categoryQuery:
             path = handler.dbPathOrUrl
-            
-            #  get journal ids in areas and categories with quartiles
-            with connect(path) as con:
-                if not area_ids:
-                    query = """
-                    SELECT DISTINCT identifier 
-                    FROM JournalIds
-                    LEFT JOIN JournalAreas ON JournalAreas.journal_id = JournalIds.journal_id
-                    LEFT JOIN Areas ON Areas.area_id = JournalAreas.area_id
-                    """
-                    df_area = read_sql(query, con)
-                else:
-                    placeholders = ", ".join(["?"] * len(area_ids))
-                    query = f"""
-                    SELECT DISTINCT identifier 
-                    FROM JournalIds
-                    LEFT JOIN JournalAreas ON JournalAreas.journal_id = JournalIds.journal_id
-                    LEFT JOIN Areas ON Areas.area_id = JournalAreas.area_id
-                    WHERE area_name IN ({placeholders})
-                    """
-                    df_area = read_sql(query, con, params=list(area_ids))
-            
-                if not category_ids and not quartiles:
-                    query = """
-                    SELECT DISTINCT identifier 
-                    FROM JournalIds
-                    LEFT JOIN JournalCategories ON JournalCategories.journal_id = JournalIds.journal_id
-                    LEFT JOIN Categories ON Categories.category_id = JournalCategories.category_id
-                    """
-                else:
-                    categories = list()
-                    for cat in category_ids:
-                        categories.append(f"'{cat}'")
-                    cat_string = ", ".join(categories)
-                    
-                    quart = list()
-                    for quartile in quartiles:
-                        quart.append(f"'{quartile}'")
-                    quart_string = ", ".join(quart)
-                    
-                    query = f"""
-                    SELECT DISTINCT identifier 
-                    FROM JournalIds
-                    LEFT JOIN JournalCategories ON JournalCategories.journal_id = JournalIds.journal_id
-                    LEFT JOIN Categories ON Categories.category_id = JournalCategories.category_id
-                    WHERE category_name IN ({cat_string}) AND quartile IN ({quart_string})
-                    """
-                df_cat = read_sql(query, con)
-            
-                # create a set of identifiers from areas
-                area_identifiers.update(df_area["identifier"].tolist())
-                cat_identifiers.update(df_cat["identifier"].tolist())
-       
-        # Intersection
-        cat_area_ids = cat_identifiers.intersection(area_identifiers)
 
-        # get journals with no apc
-        endpoint = self.journalQuery[0].getDbPathOrUrl()
+            with connect(path) as con:
+                # Convert sets to lists
+                area_list = list(area_ids)
+                cat_list = list(category_ids)
+                quart_list = list(quartiles)
+
+                conditions = []
+                params = []
+                
+                # Areas filter
+                if area_list:
+                    placeholders = ", ".join(["?"] * len(area_list))
+                    conditions.append(f"Areas.area_name IN ({placeholders})")
+                    params.extend(area_list)
+
+                # Category + quartile pairs
+                if cat_list and quart_list:
+                    pair_conditions = []
+                    for c in cat_list:
+                        for q in quart_list:
+                            pair_conditions.append("(Categories.category_name = ? AND JournalCategories.quartile = ?)")
+                            params.extend([c, q])
+                    conditions.append("(" + " OR ".join(pair_conditions) + ")")
+
+                where_clause = " AND ".join(conditions) if conditions else "1=1"
+
+                query = f"""
+                SELECT DISTINCT JournalIds.identifier
+                FROM JournalIds
+                JOIN JournalAreas ON JournalAreas.journal_id = JournalIds.journal_id
+                JOIN Areas ON Areas.area_id = JournalAreas.area_id
+                JOIN JournalCategories ON JournalCategories.journal_id = JournalIds.journal_id
+                JOIN Categories ON Categories.category_id = JournalCategories.category_id
+                WHERE {where_clause}
+                """
+                
+                df = pd.read_sql_query(query, con, params=params)
+                # Update list of matched identifiers
+                matched_identifiers.update(df["identifier"].tolist())
+
+        # Filter journals without APC (diamond)
+        endpoint = self.journalQuery[0].getDbPathOrUrl()    
         query = """
             PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             PREFIX schema: <https://schema.org/>
             PREFIX wiki: <https://www.wikidata.org/wiki/>
 
             SELECT ?journal ?title ?identifier ?languages ?publisher ?seal ?licence ?apc
-            WHERE { ?journal rdf:type schema:Periodical ;
-                    schema:name ?title ;
-                    schema:identifier ?identifier ;
-                    schema:Language ?languages ;
-                    schema:publisher ?publisher ;
-                    wiki:Q162919 ?seal ;
-                    schema:license ?licence ;
-                    wiki:Q15291071 ?apc .
-                    FILTER(?apc = False)
-                    }
-            """
+            WHERE {
+                ?journal rdf:type schema:Periodical ;
+                        schema:name ?title ;
+                        schema:identifier ?identifier ;
+                        schema:Language ?languages ;
+                        schema:publisher ?publisher ;
+                        wiki:Q162919 ?seal ;
+                        schema:license ?licence ;
+                        wiki:Q15291071 ?apc .
+                FILTER(?apc = False)
+            }
+        """
         df_apc = get(endpoint, query, True)
-        apc_identifiers = set(df_apc["identifier"].tolist())
-        cat_area_apc = apc_identifiers.intersection(cat_area_ids)
 
-        # retrieve the journals
-        for id in cat_area_apc:
-            journal = super().getEntityById(id)
-            result.append(journal) 
+        # Build diamond_identifiers by splitting pairs
+        diamond_identifiers = set()
+        for row in df_apc["identifier"].astype(str).tolist():
+            parts = [p.strip() for p in row.split(",") if p.strip()]
+            diamond_identifiers.update(parts)
+
+        # Keep only journals that match input sets + diamond APC
+        final_identifiers = matched_identifiers.intersection(diamond_identifiers)
+
+     
+        # Retrieve the journal objects
+        jou_seen = []
+
+        for identifier in final_identifiers:
+            journal = super().getEntityById(identifier)
+            if journal.getTitle() not in jou_seen:
+                jou_seen.append(journal.getTitle())
+                result.append(journal)
+
         return result

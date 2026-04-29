@@ -15,7 +15,7 @@ from impl import FullQueryEngine
 rel_path = "relational.db"
 cat = CategoryUploadHandler()
 cat.setDbPathOrUrl(rel_path)
-# cat.pushDataToDb("data/scimago.json")
+cat.pushDataToDb("data/scimago.json")
 # Please remember that one could, in principle, push one or more files
 # calling the method one or more times (even calling the method twice
 # specifying the same file!)
@@ -40,21 +40,11 @@ jou_qh.setDbPathOrUrl(grp_endpoint)
 
 # Finally, create a advanced mashup object for asking
 # about data
-# que = FullQueryEngine()
-# que.addCategoryHandler(cat_qh)
-# que.addJournalHandler(jou_qh)
+que = FullQueryEngine()
+que.addCategoryHandler(cat_qh)
+que.addJournalHandler(jou_qh)
 
-# result_q1 = que.getAllJournals()
-# result_q2 = que.getJournalsInCategoriesWithQuartile({"Artificial Intelligence", "Oncology"}, {"Q1"})
-# result_q3 = que.getEntityById("Artificial Intelligence")
-# print(result_q3)
-# result_q4 = que.getEntityById("2532-8816")
-# # etc...
-
-# result_1 = que.getJournalsWithLicense({"CC BY-NC-ND"})
-
-# result_2 = que.getEntityById("1471-0072")
-# nomi_aree = result_2.getAreas()
-# for nome in nomi_aree:
-#     print(nome.getIds())
-
+result_q1 = que.getAllJournals()
+result_q2 = que.getJournalsInCategoriesWithQuartile({"Artificial Intelligence", "Oncology"}, {"Q1"})
+result_q3 = que.getEntityById("Artificial Intelligence")
+result_q4 = que.getEntityById("2532-8816")

@@ -400,7 +400,8 @@ class CategoryQueryHandler(QueryHandler):
                 ids = id.split(", ")
                 q = " OR ".join(["identifier LIKE ?"] * len(ids))
                 params = [f"%{i}%" for i in ids]
-                query = f"SELECT * FROM JournalIds WHERE {q}"
+                subquery = f"SELECT journal_id FROM JournalIds WHERE {q}"
+                query = f"SELECT * FROM JournalIds WHERE journal_id IN ({subquery})"
                 df = read_sql(query, con, params=params)
 
         return df
