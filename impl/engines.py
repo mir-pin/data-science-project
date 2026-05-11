@@ -379,7 +379,11 @@ class FullQueryEngine(BasicQueryEngine):
                 if df_journal is not None and not df_journal.empty:
                     all_df.append(df_journal)
 
-        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)   
+        if not all_df:
+            return []
+
+        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
+        # merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)   
         
         for _, row in merged_df.iterrows():
             id = row["identifier"]
