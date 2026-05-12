@@ -139,7 +139,11 @@ class BasicQueryEngine(object):
         for handler in self.journalQuery:
             df = handler.getAllJournals()
             all_df.append(df)
-        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
+        
+        if not all_df:
+            return []
+
+        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
 
         for _, row in merged_df.iterrows():
             id = row["identifier"]
@@ -161,7 +165,11 @@ class BasicQueryEngine(object):
         for handler in self.journalQuery:
             df = handler.getJournalsWithTitle(partialTitle)
             all_df.append(df)
-        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
+        
+        if not all_df:
+            return []
+
+        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
 
         for _, row in merged_df.iterrows():
             id = row["identifier"]
@@ -183,7 +191,11 @@ class BasicQueryEngine(object):
         for handler in self.journalQuery:
             df = handler.getJournalsPublishedBy(partialName)
             all_df.append(df)
-        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
+        
+        if not all_df:
+            return []
+
+        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
 
         for _, row in merged_df.iterrows():
             id = row["identifier"]
@@ -205,7 +217,11 @@ class BasicQueryEngine(object):
         for handler in self.journalQuery:
             df = handler.getJournalsWithLicense(licenses)
             all_df.append(df)
-        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
+        
+        if not all_df:
+            return []
+
+        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
 
         for _, row in merged_df.iterrows():
             id = row["identifier"]
@@ -227,7 +243,11 @@ class BasicQueryEngine(object):
         for handler in self.journalQuery:
             df = handler.getJournalsWithAPC()
             all_df.append(df)
-        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
+
+        if not all_df:
+            return []
+
+        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
 
         for _, row in merged_df.iterrows():
             id = row["identifier"]
@@ -249,7 +269,11 @@ class BasicQueryEngine(object):
         for handler in self.journalQuery:
             df = handler.getJournalsWithDOAJSeal()
             all_df.append(df)
-        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
+        
+        if not all_df:
+            return []
+
+        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
 
         for _, row in merged_df.iterrows():
             id = row["identifier"]
@@ -271,7 +295,12 @@ class BasicQueryEngine(object):
         for handler in self.categoryQuery:
             df = handler.getAllCategories()  # returns a DataFrame
             all_df.append(df)
-        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
+        
+        if not all_df:
+            return []
+
+        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
+        
         for _, row in merged_df.iterrows():        # _ = index
             result.append(Category(id=row["category_name"], quartile=row.get("quartile")))
         return result
@@ -282,7 +311,12 @@ class BasicQueryEngine(object):
         for handler in self.categoryQuery:
             df = handler.getAllAreas()
             all_df.append(df)
-        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
+        
+        if not all_df:
+            return []
+
+        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
+        
         for _, row in merged_df.iterrows():
             result.append(Area(id=row["area_name"]))
         return result
@@ -293,7 +327,11 @@ class BasicQueryEngine(object):
         for handler in self.categoryQuery:
             df = handler.getCategoriesWithQuartile(quartiles)
             all_df.append(df)
-        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
+
+        if not all_df:
+            return []
+
+        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
         
         for _, row in merged_df.iterrows():
             if pd.notna(row["quartile"]):
@@ -306,7 +344,11 @@ class BasicQueryEngine(object):
         for handler in self.categoryQuery:
             df = handler.getCategoriesAssignedToAreas(area_ids)
             all_df.append(df)
-        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
+
+        if not all_df:
+            return []
+
+        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
 
         for _, row in merged_df.iterrows():
             result.append(Category(id=row["category_name"]))
@@ -318,7 +360,11 @@ class BasicQueryEngine(object):
         for handler in self.categoryQuery:
             df = handler.getAreasAssignedToCategories(category_ids)
             all_df.append(df)
-        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
+
+        if not all_df:
+            return []
+
+        merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
         
         for _, row in merged_df.iterrows():
             result.append(Area(id=row["area_name"]))
@@ -383,7 +429,6 @@ class FullQueryEngine(BasicQueryEngine):
             return []
 
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
-        # merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)   
         
         for _, row in merged_df.iterrows():
             id = row["identifier"]
