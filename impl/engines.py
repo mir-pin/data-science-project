@@ -74,8 +74,9 @@ class BasicQueryEngine(object):
             jou_merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop = True)
             if not jou_merged_df.empty:
                 row = jou_merged_df.iloc[0]
+                raw_id = str(row["identifier"])
                 return Journal(title = row["title"],
-                            id = [item for item in row["identifier"].split(",") if item],
+                            id = [item.strip() for item in raw_id.split(",") if item.strip()],
                             languages = [item for item in row["languages"].split(", ") if item],
                             publisher = row["publisher"],
                             seal = row["seal"],
@@ -146,16 +147,16 @@ class BasicQueryEngine(object):
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
 
         for _, row in merged_df.iterrows():
-            id = row["identifier"]
+            raw_id = str(row["identifier"])
             journal = Journal(title = row["title"],
-                              id = [item for item in row["identifier"].split(",") if item],
+                              id = [item.strip() for item in raw_id.split(",") if item.strip()],
                               languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
                               licence = row["licence"],
                               apc = row["apc"],
-                              hasCategory = self.addCategory(id),
-                              hasArea = self.addArea(id))
+                              hasCategory = self.addCategory(raw_id),
+                              hasArea = self.addArea(raw_id))
             result.append(journal)
         return result
     
@@ -172,16 +173,16 @@ class BasicQueryEngine(object):
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
 
         for _, row in merged_df.iterrows():
-            id = row["identifier"]
+            raw_id = str(row["identifier"])
             journal = Journal(title = row["title"],
-                              id = [item for item in row["identifier"].split(",") if item],
+                              id = [item.strip() for item in raw_id.split(",") if item.strip()],
                               languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
                               licence = row["licence"],
                               apc = row["apc"],
-                              hasCategory = self.addCategory(id),
-                              hasArea = self.addArea(id))
+                              hasCategory = self.addCategory(raw_id),
+                              hasArea = self.addArea(raw_id))
             result.append(journal)
         return result
         
@@ -198,16 +199,16 @@ class BasicQueryEngine(object):
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
 
         for _, row in merged_df.iterrows():
-            id = row["identifier"]
+            raw_id = str(row["identifier"])
             journal = Journal(title = row["title"],
-                              id = [item for item in row["identifier"].split(",") if item],
+                              id = [item.strip() for item in raw_id.split(",") if item.strip()],
                               languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
                               licence = row["licence"],
                               apc = row["apc"],
-                              hasCategory = self.addCategory(id),
-                              hasArea = self.addArea(id))
+                              hasCategory = self.addCategory(raw_id),
+                              hasArea = self.addArea(raw_id))
             result.append(journal)
         return result
         
@@ -224,16 +225,16 @@ class BasicQueryEngine(object):
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
 
         for _, row in merged_df.iterrows():
-            id = row["identifier"]
+            raw_id = str(row["identifier"])
             journal = Journal(title = row["title"],
-                              id = [item for item in row["identifier"].split(",") if item],
+                              id = [item.strip() for item in raw_id.split(",") if item.strip()],
                               languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
                               licence = row["licence"],
                               apc = row["apc"],
-                              hasCategory = self.addCategory(id),
-                              hasArea = self.addArea(id))
+                              hasCategory = self.addCategory(raw_id),
+                              hasArea = self.addArea(raw_id))
             result.append(journal)
         return result
 
@@ -250,16 +251,16 @@ class BasicQueryEngine(object):
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
 
         for _, row in merged_df.iterrows():
-            id = row["identifier"]
+            raw_id = str(row["identifier"])
             journal = Journal(title = row["title"],
-                              id = [item for item in row["identifier"].split(",") if item],
+                              id = [item.strip() for item in raw_id.split(",") if item.strip()],
                               languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
                               licence = row["licence"],
                               apc = row["apc"],
-                              hasCategory = self.addCategory(id),
-                              hasArea = self.addArea(id))
+                              hasCategory = self.addCategory(raw_id),
+                              hasArea = self.addArea(raw_id))
             result.append(journal)
         return result
     
@@ -276,16 +277,16 @@ class BasicQueryEngine(object):
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
 
         for _, row in merged_df.iterrows():
-            id = row["identifier"]
+            raw_id = str(row["identifier"])
             journal = Journal(title = row["title"],
-                              id = [item for item in row["identifier"].split(",") if item],
+                              id = [item.strip() for item in raw_id.split(",") if item.strip()],
                               languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
                               licence = row["licence"],
                               apc = row["apc"],
-                              hasCategory = self.addCategory(id),
-                              hasArea = self.addArea(id))
+                              hasCategory = self.addCategory(raw_id),
+                              hasArea = self.addArea(raw_id))
             result.append(journal)
         return result
 
@@ -431,16 +432,16 @@ class FullQueryEngine(BasicQueryEngine):
         merged_df = pd.concat(all_df).drop_duplicates().reset_index(drop=True)
         
         for _, row in merged_df.iterrows():
-            id = row["identifier"]
+            raw_id = str(row["identifier"])
             journal = Journal(title = row["title"],
-                              id = [item for item in row["identifier"].split(",") if item],
+                              id = [item.strip() for item in raw_id.split(",") if item.strip()],
                               languages = [item for item in row["languages"].split(", ") if item],
                               publisher = row["publisher"],
                               seal = row["seal"],
                               licence = row["licence"],
                               apc = row["apc"],
-                              hasCategory = self.addCategory(id),
-                              hasArea = self.addArea(id))
+                              hasCategory = self.addCategory(raw_id),
+                              hasArea = self.addArea(raw_id))
             result.append(journal)
 
         return result

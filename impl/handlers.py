@@ -139,17 +139,18 @@ class CategoryUploadHandler(UploadHandler):
                     my_categories.add(cat_id)
 
                     # journal-area
-                    for area in journal.get("areas"):
-                        areas.add(area)
-                        journal_area.append({
-                            "journal_id": journal_id,
-                            "area_name": area
-                        }) 
-                        # ?
+                    for area in journal.get("areas", []):
                         cat_area.append({
-                        "category_name": cat_id,
-                        "area_name": area
+                            "category_name": cat_id,
+                            "area_name": area
                         })
+                
+                for area in journal.get("areas", []):
+                    areas.add(area)
+                    journal_area.append({
+                        "journal_id": journal_id,
+                        "area_name": area
+                    })
 
             # journals dataframe         
             journals_df = DataFrame(journals)
@@ -397,7 +398,7 @@ class CategoryQueryHandler(QueryHandler):
                 df = pd.concat(results)
             # else query Journals dataframe because it could be a journal existing only in JSON
             else:
-                ids = id.split(", ")
+                ids = [i.strip() for i in str(id).split(",") if i.strip()]
                 q = " OR ".join(["identifier LIKE ?"] * len(ids))
                 params = [f"%{i}%" for i in ids]
                 subquery = f"SELECT journal_id FROM JournalIds WHERE {q}"
@@ -467,7 +468,7 @@ class CategoryQueryHandler(QueryHandler):
         return df
 
     def addCategory(self, id):
-        ids = id.split(", ")
+        ids = [i.strip() for i in str(id).split(",") if i.strip()]
         q = " OR ".join(["identifier LIKE ?"] * len(ids))
         params = [f"%{i}%" for i in ids]   
 
@@ -484,7 +485,7 @@ class CategoryQueryHandler(QueryHandler):
         return df
 
     def addArea(self, id):
-        ids = id.split(", ")
+        ids = [i.strip() for i in str(id).split(",") if i.strip()]
         q = " OR ".join(["identifier LIKE ?"] * len(ids))
         params = [f"%{i}%" for i in ids]
 
